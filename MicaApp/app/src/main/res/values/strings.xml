@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">MicaApp</string>
+    <string name="gain">Gain</string>
+    <string name="not_connected">Connection status: Not connected</string>
+    <string name="connected">Connection status: Connected</string>
+    <string name="mute">Mute</string>
+    <string name="unmute">Unmute</string>
+    <string name="hundred_percent">100 %</string>
+    <string name="microphone_permission_denied">The app does not have microphone permissions. Please allow microphone access.</string>
+</resources>
