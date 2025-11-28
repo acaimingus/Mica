@@ -43,6 +43,9 @@ namespace MicaListener
         }
 
     private:
+        /// @brief Log prefix for the Service Discovery
+        const std::string logName = "\033[32mDISCOVERY\033[0m\t";
+
         /// @brief Deleter struct for freeing the memory of the Simple Polling Loop using the C method
         struct AvahiSimplePollDeleter
         {
@@ -88,9 +91,6 @@ namespace MicaListener
         /// @brief Smart pointer for the Service Resolver
         std::unique_ptr<AvahiServiceResolver, AvahiServiceResolverDeleter> resolver;
 
-        /// @brief Log prefix for the Service Discovery
-        const std::string logDiscovery = "\033[32mDISCOVERY\033[0m\t";
-
         /// @brief Name of the service to search for
         std::string serviceName;
 
@@ -102,25 +102,25 @@ namespace MicaListener
 
         void CreateSimplePollLoop()
         {
-            std::clog << logDiscovery << "Creating the Simple Poll Loop..." << std::endl;
+            std::clog << logName << "Creating the Simple Poll Loop..." << std::endl;
             // Create a simple pool loop
             simplePoll.reset(avahi_simple_poll_new());
             if (!simplePoll)
             {
-                std::cerr << logDiscovery << "Failed to create the Avahi Simple Poll loop!" << std::endl;
+                std::cerr << logName << "Failed to create the Avahi Simple Poll loop!" << std::endl;
                 return;
             }
         }
 
         void CreateClient()
         {
-            std::clog << logDiscovery << "Creating the Client..." << std::endl;
+            std::clog << logName << "Creating the Client..." << std::endl;
             int error = 0;
             client.reset(avahi_client_new(avahi_simple_poll_get(simplePoll.get()), (AvahiClientFlags)0, ClientCallback, this, &error));
-            std::clog << logDiscovery << "Asserting that the Client exists..." << std::endl;
+            std::clog << logName << "Asserting that the Client exists..." << std::endl;
             if (error != 0)
             {
-                std::cerr << logDiscovery << "Failed to create the Avahi Client!" << avahi_strerror(error) << std::endl;
+                std::cerr << logName << "Failed to create the Avahi Client!" << avahi_strerror(error) << std::endl;
                 avahi_simple_poll_quit(simplePoll.get());
                 return;
             }
@@ -128,14 +128,14 @@ namespace MicaListener
 
         void CreateServiceBrowser(AvahiClient *_client)
         {
-            std::clog << logDiscovery << "Creating the Browser..." << std::endl;
+            std::clog << logName << "Creating the Browser..." << std::endl;
             // Create the Service Browser
             // Only browse for IPv4 services for simplicity
             browser.reset(avahi_service_browser_new(_client, AVAHI_IF_UNSPEC, AVAHI_PROTO_INET, serviceName.c_str(), NULL, (AvahiLookupFlags)0, BrowseCallback, this));
-            std::clog << logDiscovery << "Asserting that the Browser exists..." << std::endl;
+            std::clog << logName << "Asserting that the Browser exists..." << std::endl;
             if (!browser)
             {
-                std::cerr << logDiscovery << "Failed to create the Avahi Service Browser!" << std::endl;
+                std::cerr << logName << "Failed to create the Avahi Service Browser!" << std::endl;
                 avahi_simple_poll_quit(simplePoll.get());
             }
         }
@@ -148,13 +148,13 @@ namespace MicaListener
 
             }
 
-            std::clog << logDiscovery << "Creating the Resolver..." << std::endl;
+            std::clog << logName << "Creating the Resolver..." << std::endl;
             // Create the Service Resolver
             // Only resolve for IPv4 services for simplicity
             resolver.reset(avahi_service_resolver_new(_client, _interface, _protocol, _name, _type, _domain, AVAHI_PROTO_INET, (AvahiLookupFlags)0, ResolveCallback, this));
             if (!resolver)
             {
-                std::cerr << logDiscovery << "Failed to creat the Avahi Service Resolver" << std::endl;
+                std::cerr << logName << "Failed to creat the Avahi Service Resolver" << std::endl;
                 avahi_simple_poll_quit(simplePoll.get());
             }
         }
@@ -162,7 +162,7 @@ namespace MicaListener
         static void ClientCallback(AvahiClient *_client, AvahiClientState _state, void *_userData)
         {
             ServiceDiscovery *self = static_cast<ServiceDiscovery *>(_userData);
-            std::clog << self->logDiscovery << "Client Callback: ";
+            std::clog << self->logName << "Client Callback: ";
             self->HandleClientState(_client, _state);
         }
 
@@ -185,7 +185,7 @@ namespace MicaListener
         static void BrowseCallback(AvahiServiceBrowser *_browser, AvahiIfIndex _interface, AvahiProtocol _protocol, AvahiBrowserEvent _event, const char *_name, const char *_type, const char *_domain, AvahiLookupResultFlags _flags, void *_userData)
         {
             ServiceDiscovery *self = static_cast<ServiceDiscovery *>(_userData);
-            std::clog << self->logDiscovery << "Browser Callback: ";
+            std::clog << self->logName << "Browser Callback: ";
             self->HandleBrowserState(_event, _name, _type, _domain);
         }
 
@@ -224,7 +224,7 @@ namespace MicaListener
         static void ResolveCallback(AvahiServiceResolver *_resolver, AvahiIfIndex _interface, AvahiProtocol _protocol, AvahiResolverEvent _event, const char *_name, const char *_type, const char *_domain, const char *_hostName, const AvahiAddress *_address, uint16_t _port, AvahiStringList *_text, AvahiLookupResultFlags _flags, void *_userData)
         {
             ServiceDiscovery *self = static_cast<ServiceDiscovery*>(_userData);
-            std::clog << self->logDiscovery << "Resolve Callback: ";
+            std::clog << self->logName << "Resolve Callback: ";
             self->HandleResolverState(_event, _name, _address, _port);
         }
 
@@ -239,7 +239,7 @@ namespace MicaListener
                 char address[AVAHI_ADDRESS_STR_MAX];
                 avahi_address_snprint(address, sizeof(address), _address);
                 std::clog << "Avahi Service Resolver found the Service: " << _name << " / " << address << " / " << _port << std::endl;
-                std::clog << logDiscovery << "Returning info to main..." << std::endl;
+                std::clog << logName << "Returning info to main..." << std::endl;
                 NetworkConfig networkConfig(address, _port);
                 onServiceResolved(networkConfig);
                 break;

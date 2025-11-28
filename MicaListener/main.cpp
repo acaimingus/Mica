@@ -12,37 +12,37 @@ namespace MicaListener
     public:
         void Launch()
         {
-            std::clog << logMain << "MicaListener started..." << std::endl;
+            std::clog << logName << "MicaListener started..." << std::endl;
             ListenForService();
         }
 
     private:
         /// @brief Log prefix for the main launcher
-        const std::string logMain = "\033[33mMAIN\033[0m\t\t";
+        const std::string logName = "\033[33mMAIN\033[0m\t\t";
         const std::string serviceName = "_micaapp._tcp";
 
         void ListenForService()
         {
             // Initialize the Service Discovery
-            std::clog << logMain << "Creating the Service Discovery for '" << serviceName << "'..." << std::endl;
+            std::clog << logName << "Creating the Service Discovery for '" << serviceName << "'..." << std::endl;
             MicaListener::ServiceDiscovery serviceDiscovery(serviceName);
 
             // Set the callback when the Service connection gets lost again
             serviceDiscovery.SetOnServiceLost(
                 [this](const std::string &name)
                 {
-                    std::clog << logMain << "Connection loss acknowledged." << std::endl;
+                    std::clog << logName << "Connection loss acknowledged." << std::endl;
                 });
             // Set the Callback when the Service gets resolved
             serviceDiscovery.SetOnServiceResolved(
                 [this](const MicaListener::NetworkConfig &_config)
                 {
-                    std::clog << logMain << "Received Service info: " << _config.GetIp() << " / " << _config.GetPort() << std::endl;
+                    std::clog << logName << "Received Service info: " << _config.GetIp() << " / " << _config.GetPort() << std::endl;
                     ConnectToService(_config);
                 });
 
             // Find the needed service
-            std::clog << logMain << "Looking for services..." << std::endl;
+            std::clog << logName << "Looking for services..." << std::endl;
             serviceDiscovery.FindService();
         }
 
@@ -62,7 +62,7 @@ namespace MicaListener
                     break; 
                 }
 
-                std::cout << "Read " << bytesRead << " bytes from the service." << std::endl;
+                std::clog << logName << "Read " << bytesRead << " bytes from the service." << std::endl;
             }
         }
     };

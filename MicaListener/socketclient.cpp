@@ -36,7 +36,7 @@ namespace MicaListener
                 throw std::runtime_error("Invalid address / Address not supported: " + config.GetIp());
             }
 
-            std::cout << "Connecting to " << config.GetIp() << ":" << config.GetPort() << "..." << std::endl;
+            std::clog << logName << "Connecting to " << config.GetIp() << ":" << config.GetPort() << "..." << std::endl;
 
             // Connect
             if (connect(sock, (struct sockaddr *)&server, sizeof(server)) < 0)
@@ -47,14 +47,14 @@ namespace MicaListener
                 throw std::runtime_error("Connection failed: " + errorMsg);
             }
 
-            std::cout << "Connected!" << std::endl;
+            std::clog << logName<< "Connected!" << std::endl;
         }
 
         ~SocketClient()
         {
             if (sock != -1)
             {
-                std::cout << "Closing socket..." << std::endl;
+                std::clog << logName << "Closing socket..." << std::endl;
                 close(sock);
             }
         }
@@ -64,9 +64,9 @@ namespace MicaListener
             ssize_t bytesRead = recv(sock, buffer.data(), buffer.size(), 0);
             
             if (bytesRead == 0) {
-                std::cout << "Server closed connection." << std::endl;
+                std::clog << logName << "Server closed connection." << std::endl;
             } else if (bytesRead < 0) {
-                std::cerr << "Read error: " << strerror(errno) << std::endl;
+                std::cerr << logName << "Read error: " << strerror(errno) << std::endl;
             }
             
             return bytesRead;
@@ -75,5 +75,8 @@ namespace MicaListener
         std::string ip;
         int port;
         int sock;
+
+        /// @brief Log prefix for the Socket Client
+        const std::string logName = "\033[34mSOCKET\033[0m\t\t";
     };
 }
