@@ -14,7 +14,7 @@ namespace MicaListener
     class SocketClient
     {
     public:
-        SocketClient(const NetworkConfig &config)
+        SocketClient(const NetworkConfig &_config)
         {
             // AF_INET = IPv4, SOCK_STREAM = TCP, 0 = IP
             sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -27,16 +27,16 @@ namespace MicaListener
             sockaddr_in server;
             server.sin_family = AF_INET;
             // Change port to network byte order (Endianness)
-            server.sin_port = htons(config.GetPort());
+            server.sin_port = htons(_config.GetPort());
 
             // Change IP address from string to binary form
-            if (inet_pton(AF_INET, config.GetIp().c_str(), &server.sin_addr) <= 0)
+            if (inet_pton(AF_INET, _config.GetIp().c_str(), &server.sin_addr) <= 0)
             {
                 close(sock);
-                throw std::runtime_error("Invalid address / Address not supported: " + config.GetIp());
+                throw std::runtime_error("Invalid address / Address not supported: " + _config.GetIp());
             }
 
-            std::clog << logName << "Connecting to " << config.GetIp() << ":" << config.GetPort() << "..." << std::endl;
+            std::clog << logName << "Connecting to " << _config.GetIp() << ":" << _config.GetPort() << "..." << std::endl;
 
             // Connect
             if (connect(sock, (struct sockaddr *)&server, sizeof(server)) < 0)
@@ -59,9 +59,9 @@ namespace MicaListener
             }
         }
 
-        ssize_t Read(std::vector<uint8_t>& buffer)
+        ssize_t Read(std::vector<uint8_t>& _buffer)
         {
-            ssize_t bytesRead = recv(sock, buffer.data(), buffer.size(), 0);
+            ssize_t bytesRead = recv(sock, _buffer.data(), _buffer.size(), 0);
             
             if (bytesRead == 0) {
                 std::clog << logName << "Server closed connection." << std::endl;
@@ -72,11 +72,11 @@ namespace MicaListener
             return bytesRead;
         }
     private:
+        /// @brief Log prefix for the Socket Client
+        static inline const std::string logName = "\033[34mSOCKET\033[0m\t\t";
+
         std::string ip;
         int port;
         int sock;
-
-        /// @brief Log prefix for the Socket Client
-        const std::string logName = "\033[34mSOCKET\033[0m\t\t";
     };
 }

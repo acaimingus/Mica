@@ -44,7 +44,7 @@ namespace MicaListener
 
     private:
         /// @brief Log prefix for the Service Discovery
-        const std::string logName = "\033[32mDISCOVERY\033[0m\t";
+        static inline const std::string logName = "\033[32mDISCOVERY\033[0m\t";
 
         /// @brief Deleter struct for freeing the memory of the Simple Polling Loop using the C method
         struct AvahiSimplePollDeleter

@@ -3,6 +3,8 @@
 
 #include "servicediscovery.cpp"
 #include "socketclient.cpp"
+#include "audioplayer.cpp"
+#include "sinkmanager.hpp"
 
 namespace MicaListener
 {
@@ -13,13 +15,27 @@ namespace MicaListener
         void Launch()
         {
             std::clog << logName << "MicaListener started..." << std::endl;
+            
+            std::clog << logName << "Creating sink device..." << std::endl;
+            SinkManager sinkManager;
+            std::clog << logName << "Sink device created successfully!" << std::endl;
+
+            setenv("PULSE_SINK", sinkManager.sinkName.c_str(), 1);
+            std::clog << logName << "Enforced PulseAudio Sink: " << sinkManager.sinkName << std::endl;
+
+            std::clog << logName << "Preparing audio player..." << std::endl;
+            audioPlayer.Initialize("");
+            std::clog << logName << "Audio player is set up!" << std::endl;
+
+            std::clog << logName << "Listening for services..." << std::endl;
             ListenForService();
         }
 
     private:
         /// @brief Log prefix for the main launcher
-        const std::string logName = "\033[33mMAIN\033[0m\t\t";
-        const std::string serviceName = "_micaapp._tcp";
+        static inline const std::string logName = "\033[33mMAIN\033[0m\t\t";
+        static inline const std::string serviceName = "_micaapp._tcp";
+        AudioPlayer audioPlayer;
 
         void ListenForService()
         {
@@ -46,9 +62,9 @@ namespace MicaListener
             serviceDiscovery.FindService();
         }
 
-        void ConnectToService(NetworkConfig config)
+        void ConnectToService(NetworkConfig _config)
         {
-            SocketClient socketClient(config);
+            SocketClient socketClient(_config);
 
             int buffersize = 4096 * 2;
 
@@ -62,7 +78,9 @@ namespace MicaListener
                     break; 
                 }
 
-                std::clog << logName << "Read " << bytesRead << " bytes from the service." << std::endl;
+                std::vector<uint8_t> chunk(buffer.begin(), buffer.begin() + bytesRead);
+
+                audioPlayer.PlayBuffer(chunk);
             }
         }
     };
