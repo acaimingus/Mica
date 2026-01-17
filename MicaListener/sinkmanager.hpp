@@ -30,9 +30,6 @@ namespace MicaListener
             DestroyDevices();
         }
 
-        // Getter for the sink name
-        std::string GetSinkName() const { return sinkName; }
-
     private:
         static inline const std::string logName = "\033[36mSINKMANAGER\033[0m\t";
         
@@ -71,7 +68,7 @@ namespace MicaListener
                 return false;
             }
 
-            std::cout << logName << "Loaded " << debugName << " with ID: " << id << std::endl;
+            std::clog << logName << "Loaded " << debugName << " with ID: " << id << std::endl;
             loadedModuleIds.push_back(id);
             return true;
         }
@@ -79,7 +76,7 @@ namespace MicaListener
         void DestroyDevices()
         {
             std::cout << logName << "Cleaning up virtual devices..." << std::endl;
-            std::reverse(loadedModuleIds.begin(), loadedModuleIds.end());
+            std::ranges::reverse(loadedModuleIds);
 
             for (const auto& id : loadedModuleIds) {
                 if (!id.empty()) {
@@ -89,7 +86,7 @@ namespace MicaListener
             loadedModuleIds.clear();
         }
 
-        std::string Execute(std::string _command)
+        static std::string Execute(std::string _command)
         {
             std::array<char, 128> buffer;
             std::string result;

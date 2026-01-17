@@ -2,7 +2,6 @@
 #include <vector>
 #include <memory>
 #include <iostream>
-#include <cstdint>
 #include <queue>
 #include <AL/al.h>
 #include <AL/alc.h>
@@ -31,7 +30,7 @@ namespace MicaListener
         void Initialize(const std::string &_deviceName)
         {
             // Get the device
-            device.reset(alcOpenDevice(_deviceName.empty() ? NULL : _deviceName.c_str()));
+            device.reset(alcOpenDevice(_deviceName.empty() ? nullptr : _deviceName.c_str()));
             // Check if device opened correctly
             if (!device)
             {
@@ -40,7 +39,7 @@ namespace MicaListener
             }
 
             // Create the context
-            context.reset(alcCreateContext(device.get(), NULL));
+            context.reset(alcCreateContext(device.get(), nullptr));
             // Check if context created correctly
             if (!context)
             {
@@ -142,11 +141,11 @@ namespace MicaListener
             }
         }
 
-        void GetAvailableDevices()
+        static void GetAvailableDevices()
         {
-            if (alcIsExtensionPresent(NULL, "ALC_ENUMERATION_EXT"))
+            if (alcIsExtensionPresent(nullptr, "ALC_ENUMERATION_EXT"))
             {
-                const ALCchar *devices = alcGetString(NULL, ALC_DEVICE_SPECIFIER);
+                const ALCchar *devices = alcGetString(nullptr, ALC_DEVICE_SPECIFIER);
                 const ALCchar *current = devices;
 
                 std::cout << logName << "Available Audio Devices:" << std::endl;
@@ -166,7 +165,7 @@ namespace MicaListener
         /// @brief Deleter struct for freeing the memory of the OpenAL device using the C method
         struct ALCdeviceDeleter
         {
-            void operator()(ALCdevice *_device)
+            void operator()(ALCdevice *_device) const
             {
                 if (_device)
                 {
@@ -178,7 +177,7 @@ namespace MicaListener
         /// @brief Deleter struct for freeing the memory of the OpenAL context using the C method
         struct ALCcontextDeleter
         {
-            void operator()(ALCcontext *_context)
+            void operator()(ALCcontext *_context) const
             {
                 if (_context)
                 {

@@ -39,7 +39,7 @@ namespace MicaListener
             std::clog << logName << "Connecting to " << _config.GetIp() << ":" << _config.GetPort() << "..." << std::endl;
 
             // Connect
-            if (connect(sock, (struct sockaddr *)&server, sizeof(server)) < 0)
+            if (connect(sock, reinterpret_cast<struct sockaddr *>(&server), sizeof(server)) < 0)
             {
                 std::string errorMsg = strerror(errno);
                 // Clean up before throwing exception!
@@ -59,8 +59,7 @@ namespace MicaListener
             }
         }
 
-        ssize_t Read(std::vector<uint8_t>& _buffer)
-        {
+        ssize_t Read(std::vector<uint8_t>& _buffer) const {
             ssize_t bytesRead = recv(sock, _buffer.data(), _buffer.size(), 0);
             
             if (bytesRead == 0) {

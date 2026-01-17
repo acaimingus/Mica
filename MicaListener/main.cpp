@@ -62,7 +62,7 @@ namespace MicaListener
             serviceDiscovery.FindService();
         }
 
-        void ConnectToService(NetworkConfig _config)
+        void ConnectToService(const NetworkConfig &_config)
         {
             SocketClient socketClient(_config);
 
