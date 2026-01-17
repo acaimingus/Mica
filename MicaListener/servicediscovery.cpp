@@ -30,6 +30,14 @@ namespace MicaListener
             avahi_simple_poll_loop(simplePoll.get());
         }
 
+        void StopService() const
+        {
+            if (simplePoll)
+            {
+                avahi_simple_poll_quit(simplePoll.get());
+            }
+        }
+
         void SetOnServiceLost(ServiceLostCallback _callback)
         {
             onServiceLost = std::move(_callback);

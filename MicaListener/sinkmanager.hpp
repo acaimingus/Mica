@@ -75,7 +75,7 @@ namespace MicaListener
 
         void DestroyDevices()
         {
-            std::cout << logName << "Cleaning up virtual devices..." << std::endl;
+            std::cerr << logName << "Cleaning up virtual devices..." << std::endl;
             std::ranges::reverse(loadedModuleIds);
 
             for (const auto& id : loadedModuleIds) {
