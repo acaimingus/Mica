@@ -163,7 +163,7 @@ namespace MicaListener
         static inline const std::string logName = "\033[35mAUDIOPLAYER\033[0m\t";
 
         /// @brief Deleter struct for freeing the memory of the OpenAL device using the C method
-        struct ALCdeviceDeleter
+        struct ALCDeviceDeleter
         {
             void operator()(ALCdevice *_device) const
             {
@@ -187,7 +187,7 @@ namespace MicaListener
         };
 
         /// @brief Smart pointer for the OpenAL device
-        std::unique_ptr<ALCdevice, ALCdeviceDeleter> device;
+        std::unique_ptr<ALCdevice, ALCDeviceDeleter> device;
         /// @brief Smart pointer for the OpenAL context
         std::unique_ptr<ALCcontext, ALCcontextDeleter> context;
         /// @brief OpenAL audio source

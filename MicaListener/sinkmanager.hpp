@@ -51,7 +51,6 @@ namespace MicaListener
             const std::string cmdSink = "pactl load-module module-null-sink"
                                   " sink_name=" + sinkName + 
                                   " sink_properties=device.description=\"" + sinkDescription + "\"";
-            
             if (!LoadModule(cmdSink, "Null-Sink")) return;
 
             // Create a microphone out of the sink monitor
@@ -59,8 +58,7 @@ namespace MicaListener
                                     " master=" + sinkName + ".monitor" +
                                     " source_name=" + sourceName + 
                                     " source_properties=device.description=\"" + sourceDescription + "\"";
-
-            LoadModule(cmdSource, "Remap-Source (Mic)");
+            if (!LoadModule(cmdSource, "Remap-Source (Mic)")) return;;
         }
 
         bool LoadModule(const std::string& cmd, const std::string& debugName)

@@ -157,7 +157,7 @@ namespace MicaListener
             }
         }
 
-        void CreateServiceResolver(AvahiClient *_client, AvahiIfIndex _interface, const AvahiProtocol _protocol,
+        void CreateServiceResolver(AvahiClient *_client, const AvahiIfIndex _interface, const AvahiProtocol _protocol,
                                    const char *_name, const char *_type, const char *_domain)
         {
             // There is already a resolver
