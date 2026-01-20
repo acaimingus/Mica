@@ -102,6 +102,10 @@ namespace MicaListener
                 {
                     const ssize_t bytesRead = socketClient.Read(buffer);
                     if (bytesRead <= 0) {
+                        // Check if there is a timeout
+                        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                            continue;
+                        }
                         // Exit loop on error or connection closed
                         break;
                     }
@@ -119,6 +123,7 @@ namespace MicaListener
 
 int main()
 {
+    ShutdownHandler::Setup();
     MicaListener::Launcher launcher;
     launcher.Launch();
 }

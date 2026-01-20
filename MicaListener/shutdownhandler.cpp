@@ -9,7 +9,7 @@ class ShutdownHandler
 public:
     static void HandleShutdown(int signal)
     {
-        std::cout << logName << "Shutdown requested" << std::endl;
+        std::clog << logName << "Shutdown requested" << std::endl;
         shouldShutdown.store(true);
     }
 

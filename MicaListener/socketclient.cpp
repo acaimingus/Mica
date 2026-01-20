@@ -23,6 +23,12 @@ namespace MicaListener
                 throw std::runtime_error("Could not create socket: " + std::string(strerror(errno)));
             }
 
+            // Set 1s timeout
+            timeval tv{};
+            tv.tv_sec = 1;
+            tv.tv_usec = 0;
+            setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv, sizeof(tv));
+
             // Prepare the IP address
             sockaddr_in server;
             server.sin_family = AF_INET;
@@ -60,14 +66,18 @@ namespace MicaListener
         }
 
         ssize_t Read(std::vector<uint8_t>& _buffer) const {
-            ssize_t bytesRead = recv(sock, _buffer.data(), _buffer.size(), 0);
+            const ssize_t bytesRead = recv(sock, _buffer.data(), _buffer.size(), 0);
             
             if (bytesRead == 0) {
-                std::clog << logName << "Server closed connection." << std::endl;
+                //std::clog << logName << "Server closed connection." << std::endl;
             } else if (bytesRead < 0) {
+                if (errno == EAGAIN || errno == EWOULDBLOCK)
+                {
+                    // There was a timeout, no need to act
+                    return -1;
+                }
                 std::cerr << logName << "Read error: " << strerror(errno) << std::endl;
             }
-            
             return bytesRead;
         }
     private:
