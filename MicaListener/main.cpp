@@ -31,6 +31,7 @@ namespace MicaListener
 
             std::clog << logName << "Audio player is set up!" << std::endl;
 
+            // Main loop of the program
             while (!ShutdownHandler::ShouldShutdown())
             {
                 std::clog << logName << "Listening for services..." << std::endl;
@@ -38,9 +39,10 @@ namespace MicaListener
 
                 if (ShutdownHandler::ShouldShutdown()) break;
 
+                // If the config is invalid, then skip it
                 if (config.GetIp().empty())
                 {
-                    std::clog << logName << "The found service has no IP address! Retrying..." << std::endl;
+                    continue;
                 }
 
                 ConnectToService(config);
@@ -70,6 +72,7 @@ namespace MicaListener
                 {
                     std::clog << logName << "Connection loss acknowledged." << std::endl;
                 });
+
             // Set the Callback when the Service gets resolved
             serviceDiscovery.SetOnServiceResolved(
                 [&](const NetworkConfig &_config)
@@ -89,23 +92,26 @@ namespace MicaListener
 
         void ConnectToService(const NetworkConfig &_config)
         {
-            const SocketClient socketClient(_config);
-
-            constexpr int bufferSize = 4096 * 2;
-
-            std::vector<uint8_t> buffer(bufferSize);
-
-            while (true)
+            try
             {
-                const ssize_t bytesRead = socketClient.Read(buffer);
-                if (bytesRead <= 0) {
-                    // Exit loop on error or connection closed
-                    break; 
+                const SocketClient socketClient(_config);
+                constexpr int bufferSize = 4096 * 2;
+                std::vector<uint8_t> buffer(bufferSize);
+
+                while (!ShutdownHandler::ShouldShutdown())
+                {
+                    const ssize_t bytesRead = socketClient.Read(buffer);
+                    if (bytesRead <= 0) {
+                        // Exit loop on error or connection closed
+                        break;
+                    }
+
+                    std::vector<uint8_t> chunk(buffer.begin(), buffer.begin() + bytesRead);
+                    audioPlayer.PlayBuffer(chunk);
                 }
-
-                std::vector<uint8_t> chunk(buffer.begin(), buffer.begin() + bytesRead);
-
-                audioPlayer.PlayBuffer(chunk);
+            } catch (const std::runtime_error &error)
+            {
+                std::cerr << logName << "Connection error: " << error.what() << std::endl;
             }
         }
     };
