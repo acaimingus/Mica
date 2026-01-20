@@ -101,15 +101,25 @@ namespace MicaListener
                 while (!ShutdownHandler::ShouldShutdown())
                 {
                     const ssize_t bytesRead = socketClient.Read(buffer);
-                    if (bytesRead <= 0) {
+                    // There is an error or a timeout
+                    if (bytesRead < 0)
+                    {
                         // Check if there is a timeout
-                        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                        if (errno == EAGAIN || errno == EWOULDBLOCK)
+                        {
                             continue;
                         }
-                        // Exit loop on error or connection closed
+                        // Exit loop on error
+                        break;
+                    }
+                    // The connection was closed
+                    if (bytesRead == 0)
+                    {
+                        std::clog << logName << "Connection lost." << std::endl;
                         break;
                     }
 
+                    // Data was received
                     std::vector<uint8_t> chunk(buffer.begin(), buffer.begin() + bytesRead);
                     audioPlayer.PlayBuffer(chunk);
                 }

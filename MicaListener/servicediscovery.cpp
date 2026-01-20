@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "networkconfig.hpp"
+#include "shutdownhandler.cpp"
 
 namespace MicaListener
 {
@@ -27,7 +28,15 @@ namespace MicaListener
         void FindService()
         {
             CreateClient();
-            avahi_simple_poll_loop(simplePoll.get());
+
+            // Instead of using the normal poll loop manually loop while checking if the application should shut down
+            while (!ShutdownHandler::ShouldShutdown())
+            {
+                if (avahi_simple_poll_iterate(simplePoll.get(), 500) != 0)
+                {
+                    break;
+                }
+            }
         }
 
         void StopService() const

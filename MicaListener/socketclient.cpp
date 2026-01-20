@@ -69,7 +69,7 @@ namespace MicaListener
             const ssize_t bytesRead = recv(sock, _buffer.data(), _buffer.size(), 0);
             
             if (bytesRead == 0) {
-                //std::clog << logName << "Server closed connection." << std::endl;
+                std::clog << logName << "Server closed connection." << std::endl;
             } else if (bytesRead < 0) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK)
                 {
