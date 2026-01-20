@@ -22,6 +22,7 @@ namespace MicaListener
 
         SinkManager()
         {
+            CheckAndCleanOldDevices();
             CreateDevices();
         }
 
@@ -36,17 +37,25 @@ namespace MicaListener
         // List for all loaded modules (Sink + Remap)
         std::vector<std::string> loadedModuleIds;
 
+        static void CheckAndCleanOldDevices()
+        {
+            const std::string cmd =
+                    "pactl list short modules | grep 'Mica' | cut -f1 | xargs -L1 pactl unload-module 2>/dev/null";
+
+            const int result = system(cmd.c_str());
+        }
+
         void CreateDevices()
         {
             // Create the sink
-            std::string cmdSink = "pactl load-module module-null-sink"
+            const std::string cmdSink = "pactl load-module module-null-sink"
                                   " sink_name=" + sinkName + 
                                   " sink_properties=device.description=\"" + sinkDescription + "\"";
             
             if (!LoadModule(cmdSink, "Null-Sink")) return;
 
             // Create a microphone out of the sink monitor
-            std::string cmdSource = "pactl load-module module-remap-source"
+            const std::string cmdSource = "pactl load-module module-remap-source"
                                     " master=" + sinkName + ".monitor" +
                                     " source_name=" + sourceName + 
                                     " source_properties=device.description=\"" + sourceDescription + "\"";
@@ -86,11 +95,11 @@ namespace MicaListener
             loadedModuleIds.clear();
         }
 
-        static std::string Execute(std::string _command)
+        static std::string Execute(const std::string &_command)
         {
-            std::array<char, 128> buffer;
+            std::array<char, 128> buffer{};
             std::string result;
-            std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(_command.c_str(), "r"), pclose);
+            const std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(_command.c_str(), "r"), pclose);
             if (!pipe)
             {
                 std::cerr << "popen() failed!" << std::endl;
