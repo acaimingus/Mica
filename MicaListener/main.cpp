@@ -1,5 +1,7 @@
+#include <chrono>
 #include <iostream>
 #include <string>
+#include <thread>
 
 #include "servicediscovery.cpp"
 #include "socketclient.cpp"
@@ -37,8 +39,11 @@ namespace MicaListener
                 std::clog << logName << "Listening for services..." << std::endl;
                 NetworkConfig config = ListenForService();
 
-                if (ShutdownHandler::ShouldShutdown()) break;
-
+                // If the app should shut down, then break the main loop
+                if (ShutdownHandler::ShouldShutdown())
+                {
+                    break;
+                }
                 // If the config is invalid, then skip it
                 if (config.GetIp().empty())
                 {
@@ -46,8 +51,15 @@ namespace MicaListener
                 }
 
                 ConnectToService(config);
+                // Here the Listener is connected and listening
+                std::clog << logName << "Connection lost or ended." << std::endl;
 
-                std::clog << logName << "Connection lost or ended. Retrying..." << std::endl;
+                // Do a little cooldown after a connection ended to avoid connection storms
+                if (!ShutdownHandler::ShouldShutdown())
+                {
+                    std::clog << logName << "Waiting 3 seconds before retrying..." << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(3));
+                }
             }
         }
 
