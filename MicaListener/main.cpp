@@ -29,7 +29,9 @@ namespace MicaListener
             std::clog << logName << "Enforced PulseAudio Sink: " << sinkManager.sinkName << std::endl;
             std::clog << logName << "Preparing audio player..." << std::endl;
 
-            audioPlayer.Initialize("");
+            // I don't know why this device is named Mica and I cannot figure it out
+            // But it works, so I guess that's fine?
+            audioPlayer.Initialize("Mica");
 
             std::clog << logName << "Audio player is set up!" << std::endl;
 
