@@ -3,11 +3,11 @@
 #include <string>
 #include <thread>
 
-#include "servicediscovery.cpp"
-#include "socketclient.cpp"
-#include "audioplayer.cpp"
+#include "servicediscovery.hpp"
+#include "socketclient.hpp"
+#include "audioplayer.hpp"
 #include "sinkmanager.hpp"
-#include "shutdownhandler.cpp"
+#include "shutdownhandler.hpp"
 
 namespace MicaListener
 {
@@ -137,6 +137,7 @@ namespace MicaListener
                     std::vector<uint8_t> chunk(buffer.begin(), buffer.begin() + bytesRead);
                     audioPlayer.PlayBuffer(chunk);
                 }
+                std::clog << logName << "Shutdown requested" << std::endl;
             } catch (const std::runtime_error &error)
             {
                 std::cerr << logName << "Connection error: " << error.what() << std::endl;

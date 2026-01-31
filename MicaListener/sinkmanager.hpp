@@ -12,65 +12,67 @@ namespace MicaListener
     class SinkManager
     {
     public:
-        // Internal technical names
+        /// @brief Internal technical sink name
         const std::string sinkName = "Mica-Microphone";
+        /// @brief Internal technical source name
         const std::string sourceName = "Mica-Virtual-Mic";
-        
-        // Pretty names for applications like discord
+        /// @brief Pretty sink name (for applications like Discord)
         const std::string sinkDescription = "Mica Virtual Sink (Output)";
+        /// @brief Pretty source name (for applications like Discord)
         const std::string sourceDescription = "Mica Virtual Microphone (Input)";
-
+        /// @brief Constructor, checks for old PulseAudio devices, removes them and then creates new devices
         SinkManager()
         {
             CheckAndCleanOldDevices();
             CreateDevices();
         }
-
+        /// @brief Destructor, cleans up the created PulseAudio devices
         ~SinkManager()
         {
             DestroyDevices();
         }
 
     private:
+        /// @brief Log prefix for the Sink Manager
         static inline const std::string logName = "\033[36mSINKMANAGER\033[0m\t";
-        
-        // List for all loaded modules (Sink + Remap)
+        /// @brief List for all loaded modules (Sink + Remap)
         std::vector<std::string> loadedModuleIds;
-
+        /// @brief Helper method for finding any remaining virtual devices and removing them
         static void CheckAndCleanOldDevices()
         {
             const std::string cmd =
                     "pactl list short modules | grep 'Mica' | cut -f1 | xargs -L1 pactl unload-module 2>/dev/null";
-
-            const int result = system(cmd.c_str());
+            Execute(cmd);
         }
-
+        /// @brief Helper method for creating the needed PulseAudio devices
         void CreateDevices()
         {
             // Create the sink
             const std::string cmdSink = "pactl load-module module-null-sink"
-                                  " sink_name=" + sinkName + 
-                                  " sink_properties=device.description=\"" + sinkDescription + "\"";
+                                        " sink_name=" + sinkName +
+                                        " sink_properties=device.description=\"" + sinkDescription + "\"";
             if (!LoadModule(cmdSink, "Null-Sink")) return;
 
             // Create a microphone out of the sink monitor
             const std::string cmdSource = "pactl load-module module-remap-source"
-                                    " master=" + sinkName + ".monitor" +
-                                    " source_name=" + sourceName + 
-                                    " source_properties=device.description=\"" + sourceDescription + "\"";
+                                          " master=" + sinkName + ".monitor" +
+                                          " source_name=" + sourceName +
+                                          " source_properties=device.description=\"" + sourceDescription + "\"";
             if (!LoadModule(cmdSource, "Remap-Source (Mic)")) return;;
         }
-
-        bool LoadModule(const std::string& cmd, const std::string& debugName)
+        /// @brief Helper method
+        bool LoadModule(const std::string &cmd, const std::string &debugName)
         {
             std::string id = Execute(cmd);
-            
+
             // Remove the newline at the end
-            if (!id.empty() && id.back() == '\n') {
+            if (!id.empty() && id.back() == '\n')
+            {
                 id.pop_back();
             }
 
-            if (id.empty()) {
+            if (id.empty())
+            {
                 std::cerr << logName << "Failed to load " << debugName << "!" << std::endl;
                 return false;
             }
@@ -79,20 +81,22 @@ namespace MicaListener
             loadedModuleIds.push_back(id);
             return true;
         }
-
+        /// @brief Helper method for destroying the remaining PulseAudio devices when quiting
         void DestroyDevices()
         {
             std::cerr << logName << "Cleaning up virtual devices..." << std::endl;
             std::ranges::reverse(loadedModuleIds);
 
-            for (const auto& id : loadedModuleIds) {
-                if (!id.empty()) {
+            for (const auto &id: loadedModuleIds)
+            {
+                if (!id.empty())
+                {
                     Execute("pactl unload-module " + id);
                 }
             }
             loadedModuleIds.clear();
         }
-
+        /// @brief Helper method for executing commands wih popen
         static std::string Execute(const std::string &_command)
         {
             std::array<char, 128> buffer{};

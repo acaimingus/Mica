@@ -16,8 +16,8 @@ pkg_search_module(AVAHI_CLIENT REQUIRED avahi-client)
 find_package(OpenAL REQUIRED)
 pkg_search_module(OPENAL REQUIRED openal)
 
-add_executable(MicaListener main.cpp servicediscovery.cpp
-        shutdownhandler.cpp)
+add_executable(MicaListener main.cpp servicediscovery.cpp audioplayer.cpp socketclient.cpp
+        servicediscovery.cpp)
 
 # Include Directories
 target_include_directories(MicaListener PUBLIC
