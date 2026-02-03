@@ -68,7 +68,9 @@ namespace MicaListener
     private:
         /// @brief Log prefix for the main launcher
         static inline const std::string logName = "\033[33mMAIN\033[0m\t\t";
+        /// @brief The name of the service to look for
         static inline const std::string serviceName = "_micaapp._tcp";
+        /// @brief Audio player instance for the playback of the received data
         AudioPlayer audioPlayer;
 
         static NetworkConfig ListenForService()
