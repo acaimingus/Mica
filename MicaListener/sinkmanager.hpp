@@ -6,6 +6,7 @@
 #include <array>
 #include <iostream>
 #include <algorithm>
+#include <fstream>
 
 namespace MicaListener
 {
@@ -24,18 +25,25 @@ namespace MicaListener
         SinkManager()
         {
             CheckAndCleanOldDevices();
+            sinkFile.open(".micasinks");
             CreateDevices();
         }
         /// @brief Destructor, cleans up the created PulseAudio devices
         ~SinkManager()
         {
             DestroyDevices();
+            sinkFile.close();
+            // Program shut down cleanly, doesn't need the ID file anymore
+            std::remove(".micasinks");
         }
     private:
         /// @brief Log prefix for the Sink Manager
         static inline const std::string logName = "\033[36mSINKMANAGER\033[0m\t";
         /// @brief List for all loaded modules (Sink + Remap)
         std::vector<std::string> loadedModuleIds;
+        /// @brief File containing IDs of all registered PulseAudio devices to clean up in case they weren't for
+        /// whatever reason
+        std::ofstream sinkFile;
         /// @brief Helper method for loading the module and saving the ID
         /// @param cmd The command to be executed
         /// @param debugName The name of the type of microphone that was attempted to be created
@@ -56,7 +64,13 @@ namespace MicaListener
             }
 
             std::clog << logName << "Loaded " << debugName << " with ID: " << id << std::endl;
+            // Save the ID to a vector for later removal at a clean shutdown of the program
             loadedModuleIds.push_back(id);
+            // Save the ID to a local file on disk for when the app might fail to clean up a module after a crash
+            if (sinkFile.is_open())
+            {
+                sinkFile << id << std::endl;
+            }
             return true;
         }
         /// @brief Helper method for executing commands wih popen
@@ -80,9 +94,18 @@ namespace MicaListener
         /// @brief Method for finding any remaining virtual devices and removing them
         static void CheckAndCleanOldDevices()
         {
-            const std::string cmd =
-                    "pactl list short modules | grep 'Mica' | cut -f1 | xargs -L1 pactl unload-module 2>/dev/null";
-            Execute(cmd);
+            // Get the
+            std::ifstream moduleFile(".micasinks");
+            std::string oldId;
+            while (std::getline(moduleFile, oldId))
+            {
+                if (!oldId.empty())
+                {
+                    std::cerr << logName << "Cleaning up left-over ID from previous run: " << oldId << std::endl;
+                    Execute("pactl unload-module " + oldId);
+                }
+            }
+            moduleFile.close();
         }
         /// @brief Method for creating the needed PulseAudio devices
         void CreateDevices()
