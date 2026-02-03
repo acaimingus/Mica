@@ -68,69 +68,69 @@ namespace MicaListener
             return;
         }
         // Add all buffers to the free queue
-        for (ALuint buffer : audioBuffers)
+        for (ALuint buffer: audioBuffers)
         {
             freeBuffers.push(buffer);
         }
     }
 
     void AudioPlayer::PlayBuffer(const std::vector<uint8_t> &_buffer)
+    {
+        // Abort if the buffer is empty
+        if (_buffer.empty())
         {
-            // Abort if the buffer is empty
-            if (_buffer.empty())
-            {
-                return;
-            }
-
-            // Check if a buffer finished playing
-            ALint doneBuffers;
-            alGetSourcei(audioSource, AL_BUFFERS_PROCESSED, &doneBuffers);
-            while (doneBuffers > 0)
-            {
-                ALuint doneBufferId;
-                // Remove the finished buffer from the queue
-                alSourceUnqueueBuffers(audioSource, 1, &doneBufferId);
-                // Add the finished buffer back to the free queue
-                freeBuffers.push(doneBufferId);
-                // Decrease the done buffer count
-                doneBuffers--;
-            }
-
-            // Check if all buffers filled up
-            if (freeBuffers.empty())
-            {
-                // There are no free buffers, skip a packet to catch up
-                std::cerr << logName << "BUFFER UNDERRUN! Dropping audio packets to catch up." << std::endl;
-                return;
-            }
-
-            // Get the ID of a free buffer
-            const ALuint bufferId = freeBuffers.front();
-            freeBuffers.pop();
-            // Push the data to OpenAL
-            alBufferData(bufferId, AL_FORMAT_MONO16, _buffer.data(), _buffer.size(), 44100);
-
-            // Check if it worked
-            if (const auto error = alGetError(); error != AL_NO_ERROR)
-            {
-                // It did not work :(
-                std::cerr << logName << "Error uploading buffer data: " << error << std::endl;
-                // Free the buffer again and exit
-                freeBuffers.push(bufferId);
-                return;
-            }
-
-            // Queue the buffer to be played in OpenAL
-            alSourceQueueBuffers(audioSource, 1, &bufferId);
-
-            // Make sure the source is always playing
-            ALint state;
-            alGetSourcei(audioSource, AL_SOURCE_STATE, &state);
-            if (state != AL_PLAYING)
-            {
-                alSourcePlay(audioSource);
-            }
+            return;
         }
+
+        // Check if a buffer finished playing
+        ALint doneBuffers;
+        alGetSourcei(audioSource, AL_BUFFERS_PROCESSED, &doneBuffers);
+        while (doneBuffers > 0)
+        {
+            ALuint doneBufferId;
+            // Remove the finished buffer from the queue
+            alSourceUnqueueBuffers(audioSource, 1, &doneBufferId);
+            // Add the finished buffer back to the free queue
+            freeBuffers.push(doneBufferId);
+            // Decrease the done buffer count
+            doneBuffers--;
+        }
+
+        // Check if all buffers filled up
+        if (freeBuffers.empty())
+        {
+            // There are no free buffers, skip a packet to catch up
+            std::cerr << logName << "BUFFER UNDERRUN! Dropping audio packets to catch up." << std::endl;
+            return;
+        }
+
+        // Get the ID of a free buffer
+        const ALuint bufferId = freeBuffers.front();
+        freeBuffers.pop();
+        // Push the data to OpenAL
+        alBufferData(bufferId, AL_FORMAT_MONO16, _buffer.data(), _buffer.size(), 44100);
+
+        // Check if it worked
+        if (const auto error = alGetError(); error != AL_NO_ERROR)
+        {
+            // It did not work :(
+            std::cerr << logName << "Error uploading buffer data: " << error << std::endl;
+            // Free the buffer again and exit
+            freeBuffers.push(bufferId);
+            return;
+        }
+
+        // Queue the buffer to be played in OpenAL
+        alSourceQueueBuffers(audioSource, 1, &bufferId);
+
+        // Make sure the source is always playing
+        ALint state;
+        alGetSourcei(audioSource, AL_SOURCE_STATE, &state);
+        if (state != AL_PLAYING)
+        {
+            alSourcePlay(audioSource);
+        }
+    }
 
     void AudioPlayer::GetAvailableDevices()
     {

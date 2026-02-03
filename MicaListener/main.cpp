@@ -11,7 +11,6 @@
 
 namespace MicaListener
 {
-
     class Launcher
     {
     public:
@@ -154,4 +153,3 @@ int main()
     MicaListener::Launcher launcher;
     launcher.Launch();
 }
-

@@ -130,7 +130,8 @@ namespace MicaListener
         /// @param _flags Lookup flags
         /// @param _userData Pointer to the ServiceDiscovery instance (this)
         static void BrowseCallback(AvahiServiceBrowser *_browser, AvahiIfIndex _interface, AvahiProtocol _protocol,
-                                   const AvahiBrowserEvent _event, const char *_name, const char *_type, const char *_domain,
+                                   const AvahiBrowserEvent _event, const char *_name, const char *_type,
+                                   const char *_domain,
                                    AvahiLookupResultFlags _flags, void *_userData);
 
         /// @brief Member function to handle browser events (Service found/removed)
@@ -138,7 +139,8 @@ namespace MicaListener
         /// @param _name The name of the service
         /// @param _type The type of the service
         /// @param _domain The domain of the service
-        void HandleBrowserState(const AvahiBrowserEvent _event, const char *_name, const char *_type, const char *_domain);
+        void HandleBrowserState(const AvahiBrowserEvent _event, const char *_name, const char *_type,
+                                const char *_domain);
 
         /// @brief Static C-style callback wrapper for resolver events
         /// @param _resolver The service resolver instance

@@ -94,8 +94,9 @@ namespace MicaListener
         std::clog << logName << "Creating the Browser..." << std::endl;
         // Create the Service Browser
         // Only browse for IPv4 services for simplicity
-        browser.reset(avahi_service_browser_new(_client, AVAHI_IF_UNSPEC, AVAHI_PROTO_INET, serviceName.c_str(),
-                                                nullptr, static_cast<AvahiLookupFlags>(0), BrowseCallback, this));
+        browser.reset(avahi_service_browser_new(_client, AVAHI_IF_UNSPEC, AVAHI_PROTO_INET,
+                                                serviceName.c_str(), nullptr, static_cast<AvahiLookupFlags>(0),
+                                                BrowseCallback, this));
         std::clog << logName << "Asserting that the Browser exists..." << std::endl;
         if (!browser)
         {
@@ -104,8 +105,9 @@ namespace MicaListener
         }
     }
 
-    void ServiceDiscovery::CreateServiceResolver(AvahiClient *_client, const AvahiIfIndex _interface, const AvahiProtocol _protocol,
-                           const char *_name, const char *_type, const char *_domain)
+    void ServiceDiscovery::CreateServiceResolver(AvahiClient *_client, const AvahiIfIndex _interface,
+                                                 const AvahiProtocol _protocol,
+                                                 const char *_name, const char *_type, const char *_domain)
     {
         std::clog << logName << "Creating the Resolver..." << std::endl;
         // Create the Service Resolver
@@ -144,16 +146,19 @@ namespace MicaListener
         }
     }
 
-    void ServiceDiscovery::BrowseCallback(AvahiServiceBrowser *_browser, AvahiIfIndex _interface, AvahiProtocol _protocol,
-                           const AvahiBrowserEvent _event, const char *_name, const char *_type, const char *_domain,
-                           AvahiLookupResultFlags _flags, void *_userData)
+    void ServiceDiscovery::BrowseCallback(AvahiServiceBrowser *_browser, AvahiIfIndex _interface,
+                                          AvahiProtocol _protocol,
+                                          const AvahiBrowserEvent _event, const char *_name, const char *_type,
+                                          const char *_domain,
+                                          AvahiLookupResultFlags _flags, void *_userData)
     {
         auto *self = static_cast<ServiceDiscovery *>(_userData);
         std::clog << logName << "Browser Callback: ";
         self->HandleBrowserState(_event, _name, _type, _domain);
     }
 
-    void ServiceDiscovery::HandleBrowserState(const AvahiBrowserEvent _event, const char *_name, const char *_type, const char *_domain)
+    void ServiceDiscovery::HandleBrowserState(const AvahiBrowserEvent _event, const char *_name, const char *_type,
+                                              const char *_domain)
     {
         switch (_event)
         {
@@ -168,7 +173,8 @@ namespace MicaListener
                         << " domain: " << (_domain ? _domain : "(null)") << std::endl;
 
                 // Resolve the found service
-                CreateServiceResolver(client.get(), AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, _name, _type, _domain);
+                CreateServiceResolver(client.get(), AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,
+                                      _name, _type, _domain);
                 break;
             case AVAHI_BROWSER_REMOVE:
                 std::clog << "Removed service: " << (_name ? _name : "(null)")
@@ -185,19 +191,21 @@ namespace MicaListener
         }
     }
 
-    void ServiceDiscovery::ResolveCallback(AvahiServiceResolver *_resolver, AvahiIfIndex _interface, AvahiProtocol _protocol,
-                            AvahiResolverEvent _event, const char *_name, const char *_type,
-                            const char *_domain, const char *_hostName, const AvahiAddress *_address,
-                            uint16_t _port, AvahiStringList *_text, AvahiLookupResultFlags _flags,
-                            void *_userData)
+    void ServiceDiscovery::ResolveCallback(AvahiServiceResolver *_resolver, AvahiIfIndex _interface,
+                                           AvahiProtocol _protocol,
+                                           AvahiResolverEvent _event, const char *_name, const char *_type,
+                                           const char *_domain, const char *_hostName, const AvahiAddress *_address,
+                                           uint16_t _port, AvahiStringList *_text, AvahiLookupResultFlags _flags,
+                                           void *_userData)
     {
         const auto *self = static_cast<ServiceDiscovery *>(_userData);
         std::clog << MicaListener::ServiceDiscovery::logName << "Resolve Callback: ";
         self->HandleResolverState(_event, _name, _address, _port);
     }
 
-    void ServiceDiscovery::HandleResolverState(AvahiResolverEvent _event, const char *_name, const AvahiAddress *_address,
-                         uint16_t _port) const
+    void ServiceDiscovery::HandleResolverState(AvahiResolverEvent _event, const char *_name,
+                                               const AvahiAddress *_address,
+                                               uint16_t _port) const
     {
         switch (_event)
         {

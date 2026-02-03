@@ -22,7 +22,7 @@ namespace MicaListener
         ~SocketClient();
 
         /// @brief Method for reading data from the socket
-        ssize_t Read(std::vector<uint8_t>& _buffer) const;
+        ssize_t Read(std::vector<uint8_t> &_buffer) const;
 
     private:
         /// @brief Log prefix for the Socket Client
