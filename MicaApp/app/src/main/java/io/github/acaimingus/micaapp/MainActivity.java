@@ -1,6 +1,5 @@
 package io.github.acaimingus.micaapp;
 
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.View;
@@ -23,40 +22,35 @@ import com.google.android.material.textview.MaterialTextView;
  * Main activity for the app
  */
 public class MainActivity extends AppCompatActivity {
-
     /**
-     * Boolean specifying if the microphone is muted or not
+     * Controller for this view
      */
-    private boolean isMuted = false;
-    /**
-     * Boolean specifying if the microphone is connected or not
-     */
-    private boolean isConnected = false;
-    /**
-     * Integer specifying the gain of the microphone
-     */
-    private int gain = 100;
+    private MainActivityController controller;
 
     /**
      * Material button for the mute toggle
      */
-    MaterialButton muteButton;
+    private MaterialButton muteButton;
+
     /**
      * Material switch for the connection toggle
      */
-    SwitchMaterial connectionSwitch;
+    private SwitchMaterial connectionSwitch;
+
     /**
      * Material text view for the connection status
      */
-    MaterialTextView connectionStatus;
+    private MaterialTextView connectionStatus;
+
     /**
      * Material slider for the gain
      */
-    Slider gainSlider;
+    private Slider gainSlider;
+
     /**
      * Material text view for the gain
      */
-    MaterialTextView gainText;
+    private MaterialTextView gainText;
 
     /**
      * Method for constructing all necessary components when the activity is started.
@@ -76,6 +70,9 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        // Create the controller
+        controller = new MainActivityController(this);
 
         // Get the views from the layout
         muteButton = findViewById(R.id.muteButton);
@@ -97,22 +94,21 @@ public class MainActivity extends AppCompatActivity {
         // Add a listener to the connection switch
         connectionSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
-                Intent serviceLaunchIntent = new Intent(this, MicrophoneService.class);
-                startForegroundService(serviceLaunchIntent);
-                isConnected = true;
+                controller.startMicrophoneService();
+                controller.setConnected(true);
                 connectionStatus.setText(R.string.connected);
             } else {
-                isConnected = false;
-                Intent serviceStopIntent = new Intent(this, MicrophoneService.class);
-                stopService(serviceStopIntent);
+                controller.stopMicrophoneService();
+                controller.setConnected(false);
                 connectionStatus.setText(R.string.not_connected);
             }
         });
 
         // Add a listener to the gain slider
         OnChangeListener sliderListener = (slider, value, fromUser) -> {
-            gainText.setText(String.format("%s %%", (int) value));
-            gain = (int) value;
+            int valueInt = (int) value;
+            gainText.setText(String.format("%s %%", valueInt));
+            controller.setGain(valueInt);
         };
         gainSlider.addOnChangeListener(sliderListener);
     }
@@ -150,12 +146,12 @@ public class MainActivity extends AppCompatActivity {
      * @param view The view that was clicked
      */
     public void muteToggle(View view) {
-        if (!isMuted) {
-            isMuted = true;
+        if (!controller.getMuted()) {
+            controller.setMuted(true);
             muteButton.setText(R.string.unmute);
             muteButton.setIconResource(R.drawable.mic_24px);
         } else {
-            isMuted = false;
+            controller.setMuted(false);
             muteButton.setText(R.string.mute);
             muteButton.setIconResource(R.drawable.mic_off_24px);
         }
