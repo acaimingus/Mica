@@ -138,7 +138,6 @@ namespace MicaListener
                     std::vector<uint8_t> chunk(buffer.begin(), buffer.begin() + bytesRead);
                     audioPlayer.PlayBuffer(chunk);
                 }
-                std::clog << logName << "Shutdown requested" << std::endl;
             } catch (const std::runtime_error &error)
             {
                 std::cerr << logName << "Connection error: " << error.what() << std::endl;
