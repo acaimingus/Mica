@@ -31,36 +31,14 @@ namespace MicaListener
         {
             DestroyDevices();
         }
-
     private:
         /// @brief Log prefix for the Sink Manager
         static inline const std::string logName = "\033[36mSINKMANAGER\033[0m\t";
         /// @brief List for all loaded modules (Sink + Remap)
         std::vector<std::string> loadedModuleIds;
-        /// @brief Helper method for finding any remaining virtual devices and removing them
-        static void CheckAndCleanOldDevices()
-        {
-            const std::string cmd =
-                    "pactl list short modules | grep 'Mica' | cut -f1 | xargs -L1 pactl unload-module 2>/dev/null";
-            Execute(cmd);
-        }
-        /// @brief Helper method for creating the needed PulseAudio devices
-        void CreateDevices()
-        {
-            // Create the sink
-            const std::string cmdSink = "pactl load-module module-null-sink"
-                                        " sink_name=" + sinkName +
-                                        " sink_properties=device.description=\"" + sinkDescription + "\"";
-            if (!LoadModule(cmdSink, "Null-Sink")) return;
-
-            // Create a microphone out of the sink monitor
-            const std::string cmdSource = "pactl load-module module-remap-source"
-                                          " master=" + sinkName + ".monitor" +
-                                          " source_name=" + sourceName +
-                                          " source_properties=device.description=\"" + sourceDescription + "\"";
-            if (!LoadModule(cmdSource, "Remap-Source (Mic)")) return;;
-        }
-        /// @brief Helper method
+        /// @brief Helper method for loading the module and saving the ID
+        /// @param cmd The command to be executed
+        /// @param debugName The name of the type of microphone that was attempted to be created
         bool LoadModule(const std::string &cmd, const std::string &debugName)
         {
             std::string id = Execute(cmd);
@@ -81,22 +59,8 @@ namespace MicaListener
             loadedModuleIds.push_back(id);
             return true;
         }
-        /// @brief Helper method for destroying the remaining PulseAudio devices when quiting
-        void DestroyDevices()
-        {
-            std::cerr << logName << "Cleaning up virtual devices..." << std::endl;
-            std::ranges::reverse(loadedModuleIds);
-
-            for (const auto &id: loadedModuleIds)
-            {
-                if (!id.empty())
-                {
-                    Execute("pactl unload-module " + id);
-                }
-            }
-            loadedModuleIds.clear();
-        }
         /// @brief Helper method for executing commands wih popen
+        /// @param _command The command to execute
         static std::string Execute(const std::string &_command)
         {
             std::array<char, 128> buffer{};
@@ -112,6 +76,44 @@ namespace MicaListener
                 result += buffer.data();
             }
             return result;
+        }
+        /// @brief Method for finding any remaining virtual devices and removing them
+        static void CheckAndCleanOldDevices()
+        {
+            const std::string cmd =
+                    "pactl list short modules | grep 'Mica' | cut -f1 | xargs -L1 pactl unload-module 2>/dev/null";
+            Execute(cmd);
+        }
+        /// @brief Method for creating the needed PulseAudio devices
+        void CreateDevices()
+        {
+            // Create the sink
+            const std::string cmdSink = "pactl load-module module-null-sink"
+                                        " sink_name=" + sinkName +
+                                        " sink_properties=device.description=\"" + sinkDescription + "\"";
+            if (!LoadModule(cmdSink, "Null-Sink")) return;
+
+            // Create a microphone out of the sink monitor
+            const std::string cmdSource = "pactl load-module module-remap-source"
+                                          " master=" + sinkName + ".monitor" +
+                                          " source_name=" + sourceName +
+                                          " source_properties=device.description=\"" + sourceDescription + "\"";
+            if (!LoadModule(cmdSource, "Remap-Source (Mic)")) return;
+        }
+        /// @brief Method for destroying the remaining PulseAudio devices when quiting
+        void DestroyDevices()
+        {
+            std::cerr << logName << "Cleaning up virtual devices..." << std::endl;
+            std::ranges::reverse(loadedModuleIds);
+
+            for (const auto &id: loadedModuleIds)
+            {
+                if (!id.empty())
+                {
+                    Execute("pactl unload-module " + id);
+                }
+            }
+            loadedModuleIds.clear();
         }
     };
 }
