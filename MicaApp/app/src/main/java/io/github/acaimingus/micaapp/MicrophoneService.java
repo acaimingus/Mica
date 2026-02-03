@@ -148,13 +148,13 @@ public class MicrophoneService extends Service implements IAudioDataListener {
             @Override
             public void onServiceRegistered(NsdServiceInfo NsdServiceInfo) {
                 String registeredName = NsdServiceInfo.getServiceName();
-                Log.d("MicrophoneService", "NSD Dienst registriert als: " + registeredName);
+                Log.d("MicrophoneService", "NSD service registered as: " + registeredName);
             }
             @Override public void onRegistrationFailed(NsdServiceInfo serviceInfo, int errorCode) {
-                Log.e("MicrophoneService", "NSD Registrierung fehlgeschlagen: " + errorCode);
+                Log.e("MicrophoneService", "NSD service registration failed: " + errorCode);
             }
             @Override public void onServiceUnregistered(NsdServiceInfo serviceInfo) {
-                Log.i("MicrophoneService", "NSD Dienst abgemeldet.");
+                Log.i("MicrophoneService", "NSD service deregistered.");
             }
             @Override public void onUnregistrationFailed(NsdServiceInfo serviceInfo, int errorCode) { }
         };
@@ -171,7 +171,7 @@ public class MicrophoneService extends Service implements IAudioDataListener {
             nsdManager.registerService(
                     serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener);
         } else {
-            Log.e("MicrophoneService", "NsdManager konnte nicht abgerufen werden.");
+            Log.e("MicrophoneService", "NsdManager could not be found.");
         }
     }
 
