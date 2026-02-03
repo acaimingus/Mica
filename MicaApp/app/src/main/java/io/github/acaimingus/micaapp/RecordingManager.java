@@ -10,7 +10,7 @@ import androidx.annotation.RequiresPermission;
 /**
  * Controller class for managing the microphone recording.
  */
-public class MicrophoneController {
+public class RecordingManager {
 
     /**
      * AudioRecord-instance for recording the microphone on Android
@@ -99,7 +99,7 @@ public class MicrophoneController {
                 recorderThread = null;
             }
         } catch (InterruptedException exception) {
-            Log.e("MicrophoneController", "Error stopping recorder thread", exception);
+            Log.e("RecordingManager", "Error stopping recorder thread", exception);
         }
 
         // Free the listener

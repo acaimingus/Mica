@@ -21,7 +21,7 @@ import java.net.Socket;
 
 public class MicrophoneService extends Service implements IAudioDataListener {
 
-    private MicrophoneController microphoneController;
+    private RecordingManager recordingManager;
     private final String notificationChannelId = "MicrophoneServiceChannel";
     private NsdManager nsdManager;
     private NsdManager.RegistrationListener registrationListener;
@@ -36,9 +36,9 @@ public class MicrophoneService extends Service implements IAudioDataListener {
         super.onCreate();
 
         // Create the microphone controller
-        microphoneController = new MicrophoneController();
+        recordingManager = new RecordingManager();
 
-        microphoneController.setAudioDataListener(this);
+        recordingManager.setAudioDataListener(this);
 
         // Create a notification channel
         NotificationChannel serviceChannel = new NotificationChannel(
@@ -73,15 +73,15 @@ public class MicrophoneService extends Service implements IAudioDataListener {
         startForeground(1, notification);
 
         // START_STICKY = Restart service if killed by OS
-        microphoneController.startRecording();
+        recordingManager.startRecording();
         return START_STICKY;
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        microphoneController.stopRecording();
-        microphoneController = null;
+        recordingManager.stopRecording();
+        recordingManager = null;
         stopNetworkServer();
     }
 
