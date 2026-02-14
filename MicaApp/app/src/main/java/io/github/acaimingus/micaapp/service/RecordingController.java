@@ -1,4 +1,4 @@
-package io.github.acaimingus.micaapp;
+package io.github.acaimingus.micaapp.service;
 
 import android.Manifest;
 import android.media.AudioFormat;

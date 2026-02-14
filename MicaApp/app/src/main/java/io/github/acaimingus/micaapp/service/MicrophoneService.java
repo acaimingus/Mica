@@ -1,4 +1,4 @@
-package io.github.acaimingus.micaapp;
+package io.github.acaimingus.micaapp.service;
 
 import android.Manifest;
 import android.app.Notification;
@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+
+import io.github.acaimingus.micaapp.R;
 
 public class MicrophoneService extends Service implements IAudioDataListener {
 

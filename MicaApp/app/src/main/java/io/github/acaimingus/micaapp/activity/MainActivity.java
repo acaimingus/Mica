@@ -1,4 +1,4 @@
-package io.github.acaimingus.micaapp;
+package io.github.acaimingus.micaapp.activity;
 
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -17,6 +17,8 @@ import com.google.android.material.slider.Slider;
 import com.google.android.material.slider.Slider.OnChangeListener;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.textview.MaterialTextView;
+
+import io.github.acaimingus.micaapp.R;
 
 /**
  * Main activity for the app

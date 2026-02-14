@@ -1,6 +1,8 @@
-package io.github.acaimingus.micaapp;
+package io.github.acaimingus.micaapp.activity;
 
 import android.content.Intent;
+
+import io.github.acaimingus.micaapp.service.MicrophoneService;
 
 public class MainActivityController {
 
