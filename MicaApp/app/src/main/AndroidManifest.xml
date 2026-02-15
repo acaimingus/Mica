@@ -29,7 +29,8 @@
         </activity>
         <service
             android:name=".service.MicrophoneService"
-            android:foregroundServiceType="microphone" />
+            android:foregroundServiceType="microphone"
+            android:stopWithTask="true" />
     </application>
 
 </manifest>
