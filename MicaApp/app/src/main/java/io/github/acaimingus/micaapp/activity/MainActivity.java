@@ -1,6 +1,7 @@
 package io.github.acaimingus.micaapp.activity;
 
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
@@ -17,6 +18,9 @@ import com.google.android.material.slider.Slider;
 import com.google.android.material.slider.Slider.OnChangeListener;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.textview.MaterialTextView;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import io.github.acaimingus.micaapp.R;
 
@@ -86,11 +90,35 @@ public class MainActivity extends AppCompatActivity {
         // Prefill the text for the gain
         gainText.setText(R.string.hundred_percent);
 
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            connectionSwitch.setEnabled(false);
-            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.RECORD_AUDIO}, 101);
+        // Get the needed permissions for Android 13 and up
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // List of needed permissions
+            List<String> permissionsToRequest = new ArrayList<>();
+
+            // Microphone permissions
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(android.Manifest.permission.RECORD_AUDIO);
+            }
+
+            // Notification permissions
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(android.Manifest.permission.POST_NOTIFICATIONS);
+            }
+
+            if (!permissionsToRequest.isEmpty()) {
+                connectionSwitch.setEnabled(false);
+                ActivityCompat.requestPermissions(this, permissionsToRequest.toArray(new String[0]), 101);
+            } else {
+                connectionSwitch.setEnabled(true);
+            }
         } else {
-            connectionSwitch.setEnabled(true);
+            // Android 12 and below
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                connectionSwitch.setEnabled(false);
+                ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.RECORD_AUDIO}, 101);
+            } else {
+                connectionSwitch.setEnabled(true);
+            }
         }
 
         // Add a listener to the connection switch
