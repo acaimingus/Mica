@@ -67,13 +67,20 @@ public class MicrophoneService extends Service implements IAudioDataListener {
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Notification notification = new NotificationCompat.Builder(this, notificationChannelId)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, notificationChannelId)
                 .setContentTitle("Mica Microphone")
                 .setContentText("Currently connected...")
                 .setSmallIcon(R.drawable.mic_24px)
-                .setOngoing(true)
-                .build();
+                .setOngoing(true);
 
+        // Fix: Show the notification immediately, don't delay it
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            builder.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE);
+        }
+
+        Notification notification = builder.build();
+
+        // Justify the service type
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
             startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
         } else {
