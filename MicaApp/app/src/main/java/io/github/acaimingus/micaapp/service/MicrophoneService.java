@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Arrays;
 
 import io.github.acaimingus.micaapp.R;
 import io.github.acaimingus.micaapp.activity.MainActivity;
@@ -36,6 +37,11 @@ public class MicrophoneService extends Service implements IAudioDataListener {
     private Socket receiverSocket;
     private OutputStream receiverStream;
     public final String serviceType = "_micaapp._tcp";
+    private boolean isMuted = false;
+    private int gain = 100;
+    private int gainFixed = 4096;
+    private final IBinder binder = new LocalBinder(this);
+    public static boolean isRunning = false;
 
     @Override
     public void onCreate() {
@@ -63,7 +69,20 @@ public class MicrophoneService extends Service implements IAudioDataListener {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return binder;
+    }
+
+    public void setIsMuted(boolean value) {
+        isMuted = value;
+    }
+
+    public boolean getIsMuted() {
+        return isMuted;
+    }
+
+    public void setGain(int value) {
+        gain = value;
+        this.gainFixed = (int) ((value / 100.0f) * 4096);
     }
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
@@ -93,8 +112,11 @@ public class MicrophoneService extends Service implements IAudioDataListener {
             startForeground(1, notification);
         }
 
-        // START_STICKY = Restart service if killed by OS
         recordingController.startRecording();
+
+        isRunning = true;
+
+        // START_STICKY = Restart service if killed by OS
         return START_STICKY;
     }
 
@@ -104,6 +126,7 @@ public class MicrophoneService extends Service implements IAudioDataListener {
         recordingController.stopRecording();
         recordingController = null;
         stopNetworkServer();
+        isRunning = false;
     }
 
     private void startNetworkServer() {
@@ -200,11 +223,42 @@ public class MicrophoneService extends Service implements IAudioDataListener {
     public void onAudioDataReceived(byte[] data, int bytesRead) {
         if(receiverStream != null) {
             try {
-                receiverStream.write(data, 0, bytesRead);
+                if (isMuted) {
+                    // Send zero array
+                    Arrays.fill(data, (byte) 0);
+                    receiverStream.write(data, 0, bytesRead);
+                } else {
+                    applyGain(data, bytesRead);
+                    receiverStream.write(data, 0, bytesRead);
+                }
             } catch (IOException exception) {
                 Log.e("MicrophoneService", "Error sending audio data", exception);
                 cleanupClientSocket();
             }
+        }
+    }
+
+    private void applyGain(byte[] data, int bytesRead) {
+        // No gain to apply
+        if (gain == 100) {
+            return;
+        }
+
+        // 2 steps because we are working with 16 bit
+        for (int i = 0; i < bytesRead; i+= 2) {
+            // Combine 2 bytes to a 16 bit integer
+            int audioSample = (data[i] & 0xFF) | (data[i+1] << 8);
+            // Apply gain, apply our factor and divide by 4096
+            int newSample = (audioSample * gainFixed) >> 12;
+            // Prevent clipping by bounding the values
+            if (newSample > 32767) {
+                newSample = 32767;
+            } else if (newSample < -32768) {
+                newSample = -32768;
+            }
+            // Put the result back in the array
+            data[i] = (byte) newSample;
+            data[i+1] = (byte) (newSample >> 8);
         }
     }
 

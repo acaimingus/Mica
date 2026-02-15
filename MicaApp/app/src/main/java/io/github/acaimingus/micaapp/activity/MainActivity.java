@@ -1,8 +1,13 @@
 package io.github.acaimingus.micaapp.activity;
 
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.view.View;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
@@ -23,16 +28,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.github.acaimingus.micaapp.R;
+import io.github.acaimingus.micaapp.service.LocalBinder;
+import io.github.acaimingus.micaapp.service.MicrophoneService;
 
 /**
  * Main activity for the app
  */
 public class MainActivity extends AppCompatActivity {
-    /**
-     * Controller for this view
-     */
-    private MainActivityController controller;
-
     /**
      * Material button for the mute toggle
      */
@@ -57,6 +59,31 @@ public class MainActivity extends AppCompatActivity {
      * Material text view for the gain
      */
     private MaterialTextView gainText;
+    /**
+     * Reference to the microphone service
+     */
+    private MicrophoneService microphoneService;
+    /**
+     * Boolean specifiying whether the service is bound or not
+     */
+    private boolean isServiceBound = false;
+
+    private final ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            LocalBinder binder = (LocalBinder) service;
+            microphoneService = binder.getService();
+            isServiceBound = true;
+
+            updateUiState();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            microphoneService = null;
+            isServiceBound = false;
+        }
+    };
 
     /**
      * Method for constructing all necessary components when the activity is started.
@@ -76,9 +103,6 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
-        // Create the controller
-        controller = new MainActivityController(this);
 
         // Get the views from the layout
         muteButton = findViewById(R.id.muteButton);
@@ -123,14 +147,18 @@ public class MainActivity extends AppCompatActivity {
 
         // Add a listener to the connection switch
         connectionSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            Intent intent = new Intent(this, MicrophoneService.class);
             if (isChecked) {
-                controller.startMicrophoneService();
-                controller.setConnected(true);
                 connectionStatus.setText(R.string.connected);
+                ContextCompat.startForegroundService(this, intent);
+                bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
             } else {
-                controller.stopMicrophoneService();
-                controller.setConnected(false);
                 connectionStatus.setText(R.string.not_connected);
+                if (isServiceBound) {
+                    unbindService(serviceConnection);
+                    isServiceBound = false;
+                }
+                stopService(intent);
             }
         });
 
@@ -138,9 +166,18 @@ public class MainActivity extends AppCompatActivity {
         OnChangeListener sliderListener = (slider, value, fromUser) -> {
             int valueInt = (int) value;
             gainText.setText(String.format("%s %%", valueInt));
-            controller.setGain(valueInt);
+            microphoneService.setGain(valueInt);
         };
         gainSlider.addOnChangeListener(sliderListener);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (isServiceBound) {
+            unbindService(serviceConnection);
+            isServiceBound = false;
+        }
     }
 
     /**
@@ -170,20 +207,34 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void updateUiState() {
+        if (!isServiceBound || microphoneService == null) {
+            return;
+        }
+        updateMuteButtonUI(microphoneService.getIsMuted());
+        connectionSwitch.setChecked(MicrophoneService.isRunning);
+    }
+
+    private void updateMuteButtonUI(boolean isMuted) {
+        if (isMuted) {
+            muteButton.setText(R.string.unmute);
+            muteButton.setIconResource(R.drawable.mic_24px);
+        } else {
+            muteButton.setText(R.string.mute);
+            muteButton.setIconResource(R.drawable.mic_off_24px);
+        }
+    }
+
     /**
      * Method for toggling the mute button
      *
      * @param view The view that was clicked
      */
     public void muteToggle(View view) {
-        if (!controller.getMuted()) {
-            controller.setMuted(true);
-            muteButton.setText(R.string.unmute);
-            muteButton.setIconResource(R.drawable.mic_24px);
-        } else {
-            controller.setMuted(false);
-            muteButton.setText(R.string.mute);
-            muteButton.setIconResource(R.drawable.mic_off_24px);
+        if (isServiceBound && microphoneService != null) {
+            boolean newState = !microphoneService.getIsMuted();
+            microphoneService.setIsMuted(newState);
+            updateMuteButtonUI(newState);
         }
     }
 }
