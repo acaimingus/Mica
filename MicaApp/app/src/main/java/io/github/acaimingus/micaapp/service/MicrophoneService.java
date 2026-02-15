@@ -66,8 +66,8 @@ public class MicrophoneService extends Service implements IAudioDataListener {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Notification notification = new NotificationCompat.Builder(this, notificationChannelId)
-                .setContentTitle("Microphone Service")
-                .setContentText("Records audio...")
+                .setContentTitle("Mica Microphone")
+                .setContentText("Currently connected...")
                 .setSmallIcon(R.drawable.mic_24px)
                 .setOngoing(true)
                 .build();
