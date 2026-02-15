@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -22,6 +23,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import io.github.acaimingus.micaapp.R;
+import io.github.acaimingus.micaapp.activity.MainActivity;
 
 public class MicrophoneService extends Service implements IAudioDataListener {
 
@@ -67,10 +69,14 @@ public class MicrophoneService extends Service implements IAudioDataListener {
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        // Create an intent to open the app when clicking on the notífication
+        PendingIntent notificationIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), PendingIntent.FLAG_IMMUTABLE);
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, notificationChannelId)
                 .setContentTitle("Mica Microphone")
                 .setContentText("Currently connected...")
                 .setSmallIcon(R.drawable.mic_24px)
+                .setContentIntent(notificationIntent)
                 .setOngoing(true);
 
         // Fix: Show the notification immediately, don't delay it
