@@ -69,7 +69,7 @@
                 android:stepSize="1"
                 android:valueFrom="0"
                 android:value="100"
-                android:valueTo="200" />
+                android:valueTo="400" />
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/gainText"
                 android:layout_width="match_parent"
