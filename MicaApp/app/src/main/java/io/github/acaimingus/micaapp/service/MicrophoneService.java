@@ -24,6 +24,7 @@ import java.net.Socket;
 import java.util.Arrays;
 
 import io.github.acaimingus.micaapp.R;
+import io.github.acaimingus.micaapp.activity.ConnectionCallbacks;
 import io.github.acaimingus.micaapp.activity.MainActivity;
 
 public class MicrophoneService extends Service implements IAudioDataListener {
@@ -42,6 +43,8 @@ public class MicrophoneService extends Service implements IAudioDataListener {
     private int gainFixed = 4096;
     private final IBinder binder = new LocalBinder(this);
     public static boolean isRunning = false;
+
+    private ConnectionCallbacks connectionCallbacks;
 
     @Override
     public void onCreate() {
@@ -70,6 +73,10 @@ public class MicrophoneService extends Service implements IAudioDataListener {
     @Override
     public IBinder onBind(Intent intent) {
         return binder;
+    }
+
+    public void setConnectionCallbacks(ConnectionCallbacks callbacks) {
+        connectionCallbacks = callbacks;
     }
 
     public void setIsMuted(boolean value) {
@@ -146,14 +153,23 @@ public class MicrophoneService extends Service implements IAudioDataListener {
 
                         Log.i("MicrophoneService", "PC connected! IP: " + clientSocket.getInetAddress().getHostAddress());
 
-                        cleanupClientSocket();
+                        // Send a callback to the UI, that the connection is there
+                        if (connectionCallbacks != null) {
+                            connectionCallbacks.onConnected();
+                        }
 
+                        // Clean up the client socket  if it was previously initialized
+                        cleanupClientSocket();
+                        // Set it and get its output stream
                         receiverSocket = clientSocket;
                         receiverStream = receiverSocket.getOutputStream();
 
                     } catch (IOException e) {
                         if (serverSocket == null || serverSocket.isClosed()) {
                             Log.i("MicrophoneService", "ServerSocket closed, stopping thread...");
+                            if (connectionCallbacks != null) {
+                                connectionCallbacks.onDisconnected();
+                            }
                             break;
                         }
                         Log.e("MicrophoneService", "Error on serverSocket.accept()", e);
@@ -233,6 +249,9 @@ public class MicrophoneService extends Service implements IAudioDataListener {
                 }
             } catch (IOException exception) {
                 Log.e("MicrophoneService", "Error sending audio data", exception);
+                if (connectionCallbacks != null) {
+                    connectionCallbacks.onDisconnected();
+                }
                 cleanupClientSocket();
             }
         }

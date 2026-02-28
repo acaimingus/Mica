@@ -34,7 +34,7 @@ import io.github.acaimingus.micaapp.service.MicrophoneService;
 /**
  * Main activity for the app
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ConnectionCallbacks {
     /**
      * Material button for the mute toggle
      */
@@ -51,11 +51,6 @@ public class MainActivity extends AppCompatActivity {
     private MaterialTextView connectionStatus;
 
     /**
-     * Material slider for the gain
-     */
-    private Slider gainSlider;
-
-    /**
      * Material text view for the gain
      */
     private MaterialTextView gainText;
@@ -64,9 +59,16 @@ public class MainActivity extends AppCompatActivity {
      */
     private MicrophoneService microphoneService;
     /**
-     * Boolean specifiying whether the service is bound or not
+     * Boolean specifying whether the service is bound or not
      */
     private boolean isServiceBound = false;
+
+    /**
+     * Reference to this activity for the runnables in the callbacks
+     */
+    MainActivity mainActivity = this;
+
+    Intent serviceIntent;
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -74,12 +76,17 @@ public class MainActivity extends AppCompatActivity {
             LocalBinder binder = (LocalBinder) service;
             microphoneService = binder.getService();
             isServiceBound = true;
-
+            // Set a callback for updating the UI when the connection state changes
+            microphoneService.setConnectionCallbacks(MainActivity.this);
             updateUiState();
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
+            // Unset the callback on disconnect
+            if (microphoneService != null) {
+                microphoneService.setConnectionCallbacks(null);
+            }
             microphoneService = null;
             isServiceBound = false;
         }
@@ -104,11 +111,14 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+        // Create the service intent
+        serviceIntent = new Intent(this, MicrophoneService.class);
+
         // Get the views from the layout
         muteButton = findViewById(R.id.muteButton);
         connectionSwitch = findViewById(R.id.connectionSwitch);
         connectionStatus = findViewById(R.id.connectionStatus);
-        gainSlider = findViewById(R.id.gainSlider);
+        Slider gainSlider = findViewById(R.id.gainSlider);
         gainText = findViewById(R.id.gainText);
 
         // Prefill the text for the gain
@@ -147,18 +157,10 @@ public class MainActivity extends AppCompatActivity {
 
         // Add a listener to the connection switch
         connectionSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            Intent intent = new Intent(this, MicrophoneService.class);
             if (isChecked) {
-                connectionStatus.setText(R.string.connected);
-                ContextCompat.startForegroundService(this, intent);
-                bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+                onConnecting();
             } else {
-                connectionStatus.setText(R.string.not_connected);
-                if (isServiceBound) {
-                    unbindService(serviceConnection);
-                    isServiceBound = false;
-                }
-                stopService(intent);
+                onDisconnected();
             }
         });
 
@@ -236,5 +238,41 @@ public class MainActivity extends AppCompatActivity {
             microphoneService.setIsMuted(newState);
             updateMuteButtonUI(newState);
         }
+    }
+
+    @Override
+    public void onConnected() {
+        runOnUiThread(() -> {
+            connectionStatus.setText(R.string.connected);
+            // Show a little toast to the user
+            Toast.makeText(mainActivity, "Connection established!", Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    @Override
+    public void onConnecting() {
+        runOnUiThread(() -> {
+            connectionStatus.setText(R.string.connecting);
+            ContextCompat.startForegroundService(mainActivity, serviceIntent);
+            bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+        });
+    }
+
+    @Override
+    public void onDisconnected() {
+        runOnUiThread(() -> {
+            connectionStatus.setText(R.string.not_connected);
+            connectionSwitch.setChecked(false);
+            // Show a little toast to the user
+            Toast.makeText(mainActivity, "Connection lost or closed.", Toast.LENGTH_SHORT).show();
+            if (isServiceBound) {
+                if (microphoneService != null) {
+                    microphoneService.setConnectionCallbacks(null);
+                }
+                unbindService(serviceConnection);
+                isServiceBound = false;
+            }
+            stopService(serviceIntent);
+        });
     }
 }
