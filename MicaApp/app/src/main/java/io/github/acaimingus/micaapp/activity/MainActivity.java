@@ -68,7 +68,16 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
      */
     MainActivity mainActivity = this;
 
+    /**
+     * Intent for the service
+     */
     Intent serviceIntent;
+
+    /**
+     * State of the connection as known by the UI;
+     * ONLY SET THIS IN THE CONNECTION CALLBACKS TO PRESERVE THE SINGLE SOURCE OF TRUTH!
+     */
+    ConnectionStates currentConnectionState = ConnectionStates.DISCONNECTED;
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -157,9 +166,9 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
 
         // Add a listener to the connection switch
         connectionSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
+            if (isChecked && currentConnectionState == ConnectionStates.DISCONNECTED) {
                 onConnecting();
-            } else {
+            } else if (!isChecked && currentConnectionState != ConnectionStates.DISCONNECTED) {
                 onDisconnected();
             }
         });
@@ -242,6 +251,10 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
 
     @Override
     public void onConnected() {
+        if (currentConnectionState == ConnectionStates.CONNECTED) {
+            return;
+        }
+        currentConnectionState = ConnectionStates.CONNECTED;
         runOnUiThread(() -> {
             connectionStatus.setText(R.string.connected);
             // Show a little toast to the user
@@ -251,6 +264,10 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
 
     @Override
     public void onConnecting() {
+        if (currentConnectionState == ConnectionStates.CONNECTING) {
+            return;
+        }
+        currentConnectionState = ConnectionStates.CONNECTING;
         runOnUiThread(() -> {
             connectionStatus.setText(R.string.connecting);
             ContextCompat.startForegroundService(mainActivity, serviceIntent);
@@ -260,6 +277,11 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
 
     @Override
     public void onDisconnected() {
+        // Exit
+        if (currentConnectionState == ConnectionStates.DISCONNECTED) {
+            return;
+        }
+        currentConnectionState = ConnectionStates.DISCONNECTED;
         runOnUiThread(() -> {
             connectionStatus.setText(R.string.not_connected);
             connectionSwitch.setChecked(false);
