@@ -20,6 +20,10 @@ import java.util.Arrays;
 import io.github.acaimingus.micaapp.R;
 import io.github.acaimingus.micaapp.activity.ConnectionCallbacks;
 import io.github.acaimingus.micaapp.activity.MainActivity;
+import io.github.acaimingus.micaapp.service.audio.AudioProcessor;
+import io.github.acaimingus.micaapp.service.audio.IAudioDataListener;
+import io.github.acaimingus.micaapp.service.audio.RecordingController;
+import io.github.acaimingus.micaapp.service.network.NsdController;
 
 public class MicrophoneService extends Service implements IAudioDataListener {
 

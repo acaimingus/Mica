@@ -1,4 +1,4 @@
-package io.github.acaimingus.micaapp.service;
+package io.github.acaimingus.micaapp.service.network;
 
 import android.content.Context;
 import android.net.nsd.NsdManager;
@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+
+import io.github.acaimingus.micaapp.service.MicrophoneService;
 
 public class NsdController {
     private NsdManager nsdManager;

@@ -1,4 +1,4 @@
-package io.github.acaimingus.micaapp.service;
+package io.github.acaimingus.micaapp.service.audio;
 
 public class AudioProcessor {
     public int gain = 100;
