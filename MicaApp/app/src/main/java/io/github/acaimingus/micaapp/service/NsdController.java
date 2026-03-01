@@ -10,8 +10,6 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import io.github.acaimingus.micaapp.activity.ConnectionCallbacks;
-
 public class NsdController {
     private NsdManager nsdManager;
     private NsdManager.RegistrationListener registrationListener;
@@ -20,15 +18,10 @@ public class NsdController {
     public final String serviceType = "_micaapp._tcp";
     private Socket receiverSocket;
     public OutputStream receiverStream;
-    public ConnectionCallbacks connectionCallbacks;
-    private final Context context;
+    private final MicrophoneService microphoneService;
 
-    public NsdController(Context context) {
-        this.context = context;
-    }
-
-    public void setConnectionCallbacks(ConnectionCallbacks callbacks) {
-        connectionCallbacks = callbacks;
+    public NsdController(MicrophoneService microphoneService) {
+        this.microphoneService = microphoneService;
     }
 
     public void startNetworkServer() {
@@ -49,8 +42,8 @@ public class NsdController {
                         Log.i("MicrophoneService", "PC connected! IP: " + clientSocket.getInetAddress().getHostAddress());
 
                         // Send a callback to the UI, that the connection is there
-                        if (connectionCallbacks != null) {
-                            connectionCallbacks.onConnected();
+                        if (microphoneService.connectionCallbacks != null) {
+                            microphoneService.connectionCallbacks.onConnected();
                         }
 
                         // Clean up the client socket  if it was previously initialized
@@ -62,8 +55,8 @@ public class NsdController {
                     } catch (IOException e) {
                         if (serverSocket == null || serverSocket.isClosed()) {
                             Log.i("MicrophoneService", "ServerSocket closed, stopping thread...");
-                            if (connectionCallbacks != null) {
-                                connectionCallbacks.onDisconnected();
+                            if (microphoneService.connectionCallbacks != null) {
+                                microphoneService.connectionCallbacks.onDisconnected();
                             }
                             break;
                         }
@@ -121,7 +114,7 @@ public class NsdController {
         serviceInfo.setServiceType(serviceType);
         serviceInfo.setPort(port);
 
-        nsdManager = (NsdManager) context.getSystemService(Context.NSD_SERVICE);
+        nsdManager = (NsdManager) microphoneService.getSystemService(Context.NSD_SERVICE);
         if (nsdManager != null) {
             nsdManager.registerService(
                     serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener);

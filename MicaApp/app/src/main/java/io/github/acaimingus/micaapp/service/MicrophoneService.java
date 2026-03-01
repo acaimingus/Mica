@@ -31,6 +31,7 @@ public class MicrophoneService extends Service implements IAudioDataListener {
     private final IBinder binder = new LocalBinder(this);
     public static boolean isRunning = false;
     private NsdController nsdController;
+    public ConnectionCallbacks connectionCallbacks;
 
     @Override
     public void onCreate() {
@@ -64,7 +65,7 @@ public class MicrophoneService extends Service implements IAudioDataListener {
     }
 
     public void setConnectionCallbacks(ConnectionCallbacks callbacks) {
-        nsdController.setConnectionCallbacks(callbacks);
+        connectionCallbacks = callbacks;
     }
 
     public void setIsMuted(boolean value) {
@@ -138,8 +139,8 @@ public class MicrophoneService extends Service implements IAudioDataListener {
                 }
             } catch (IOException exception) {
                 Log.e("MicrophoneService", "Error sending audio data", exception);
-                if (nsdController.connectionCallbacks != null) {
-                    nsdController.connectionCallbacks.onDisconnected();
+                if (connectionCallbacks != null) {
+                    connectionCallbacks.onDisconnected();
                 }
                 nsdController.cleanupClientSocket();
             }
