@@ -40,6 +40,7 @@ public class NsdController {
                     try {
                         Log.d("MicrophoneService", "Waiting for a PC connection...");
                         Socket clientSocket = serverSocket.accept();
+                        clientSocket.setKeepAlive(true);
 
                         Log.i("MicrophoneService", "PC connected! IP: " + clientSocket.getInetAddress().getHostAddress());
 
