@@ -9,7 +9,9 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
@@ -35,6 +37,10 @@ public class MicrophoneService extends Service implements IAudioDataListener {
     private NsdController nsdController;
     private AudioProcessor audioProcessor;
     public ConnectionCallbacks connectionCallbacks;
+    private long totalBytesSent = 0;
+    private int bytesInCurrentSecond = 0;
+    private Handler statsHandler;
+    private Runnable statsRunnable;
 
     @Override
     public void onCreate() {
@@ -60,6 +66,22 @@ public class MicrophoneService extends Service implements IAudioDataListener {
         if (manager != null) {
             manager.createNotificationChannel(serviceChannel);
         }
+
+        // Runnable for the timer for the statistics
+        statsHandler = new Handler(Looper.getMainLooper());
+        statsRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (connectionCallbacks != null && isRunning) {
+                    connectionCallbacks.onNetworkStatsUpdated(totalBytesSent, bytesInCurrentSecond);
+                }
+                // Reset the rate
+                bytesInCurrentSecond = 0;
+
+                // Call yourself again in 1 second
+                statsHandler.postDelayed(this, 1000);
+            }
+        };
 
         nsdController.startNetworkServer();
     }
@@ -114,8 +136,13 @@ public class MicrophoneService extends Service implements IAudioDataListener {
             startForeground(1, notification);
         }
 
-        recordingController.startRecording();
+        // Set the initial values for the statistics
+        totalBytesSent = 0;
+        bytesInCurrentSecond = 0;
+        // Start the runnable
+        statsHandler.post(statsRunnable);
 
+        recordingController.startRecording();
         isRunning = true;
 
         // START_STICKY = Restart service if killed by OS
@@ -142,6 +169,9 @@ public class MicrophoneService extends Service implements IAudioDataListener {
                 } else {
                     audioProcessor.applyGain(data, bytesRead);
                     nsdController.receiverStream.write(data, 0, bytesRead);
+                    // Update the stats
+                    totalBytesSent += bytesRead;
+                    bytesInCurrentSecond += bytesRead;
                 }
             } catch (IOException exception) {
                 Log.e("MicrophoneService", "Error sending audio data", exception);

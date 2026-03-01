@@ -1,5 +1,8 @@
 package io.github.acaimingus.micaapp.activity;
 
+import static android.view.View.INVISIBLE;
+import static android.view.View.VISIBLE;
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -19,6 +22,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.divider.MaterialDivider;
 import com.google.android.material.slider.Slider;
 import com.google.android.material.slider.Slider.OnChangeListener;
 import com.google.android.material.switchmaterial.SwitchMaterial;
@@ -54,6 +58,14 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
      * Material text view for the gain
      */
     private MaterialTextView gainText;
+    /**
+     * Material text view for the stats
+     */
+    private MaterialTextView statsText;
+    /**
+     * Material divider for the stats, gets toggled when stats are visible
+     */
+    private MaterialDivider statsDivider;
     /**
      * Reference to the microphone service
      */
@@ -129,6 +141,8 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         connectionStatus = findViewById(R.id.connectionStatus);
         Slider gainSlider = findViewById(R.id.gainSlider);
         gainText = findViewById(R.id.gainText);
+        statsText = findViewById(R.id.statsText);
+        statsDivider = findViewById(R.id.statsDivider);
 
         // Prefill the text for the gain
         gainText.setText(R.string.hundred_percent);
@@ -294,7 +308,21 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
                 unbindService(serviceConnection);
                 isServiceBound = false;
             }
+            // Reset the stats text to be cleared
+            statsText.setText("");
+            statsDivider.setVisibility(INVISIBLE);
             stopService(serviceIntent);
         });
+    }
+
+    @Override
+    public void onNetworkStatsUpdated(long totalBytesSent, int currentBytesPerSecond) {
+        double kbPerSecond = currentBytesPerSecond / 1024.0;
+        double totalMb = totalBytesSent / (1024.0 * 1024.0);
+
+        String stats = String.format(getString(R.string.rate_1f_kb_s_total_1f_mb), kbPerSecond, totalMb);
+
+        statsText.setText(stats);
+        statsDivider.setVisibility(VISIBLE);
     }
 }
