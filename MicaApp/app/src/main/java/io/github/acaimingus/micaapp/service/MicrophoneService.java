@@ -26,11 +26,10 @@ public class MicrophoneService extends Service implements IAudioDataListener {
     private RecordingController recordingController;
     private final String notificationChannelId = "MicrophoneServiceChannel";
     private boolean isMuted = false;
-    private int gain = 100;
-    private int gainFixed = 4096;
     private final IBinder binder = new LocalBinder(this);
     public static boolean isRunning = false;
     private NsdController nsdController;
+    private AudioProcessor audioProcessor;
     public ConnectionCallbacks connectionCallbacks;
 
     @Override
@@ -40,6 +39,9 @@ public class MicrophoneService extends Service implements IAudioDataListener {
         // Create the microphone controller
         recordingController = new RecordingController();
         recordingController.setAudioDataListener(this);
+
+        // Create the audio processor
+        audioProcessor = new AudioProcessor();
 
         // Create the NSD controller
         nsdController = new NsdController(this);
@@ -77,8 +79,8 @@ public class MicrophoneService extends Service implements IAudioDataListener {
     }
 
     public void setGain(int value) {
-        gain = value;
-        this.gainFixed = (int) ((value / 100.0f) * 4096);
+        audioProcessor.gain = value;
+        audioProcessor.gainFixed = (int) ((value / 100.0f) * 4096);
     }
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
@@ -134,7 +136,7 @@ public class MicrophoneService extends Service implements IAudioDataListener {
                     Arrays.fill(data, (byte) 0);
                     nsdController.receiverStream.write(data, 0, bytesRead);
                 } else {
-                    applyGain(data, bytesRead);
+                    audioProcessor.applyGain(data, bytesRead);
                     nsdController.receiverStream.write(data, 0, bytesRead);
                 }
             } catch (IOException exception) {
@@ -144,30 +146,6 @@ public class MicrophoneService extends Service implements IAudioDataListener {
                 }
                 nsdController.cleanupClientSocket();
             }
-        }
-    }
-
-    private void applyGain(byte[] data, int bytesRead) {
-        // No gain to apply
-        if (gain == 100) {
-            return;
-        }
-
-        // 2 steps because we are working with 16 bit
-        for (int i = 0; i < bytesRead; i+= 2) {
-            // Combine 2 bytes to a 16 bit integer
-            int audioSample = (data[i] & 0xFF) | (data[i+1] << 8);
-            // Apply gain, apply our factor and divide by 4096
-            int newSample = (audioSample * gainFixed) >> 12;
-            // Prevent clipping by bounding the values
-            if (newSample > 32767) {
-                newSample = 32767;
-            } else if (newSample < -32768) {
-                newSample = -32768;
-            }
-            // Put the result back in the array
-            data[i] = (byte) newSample;
-            data[i+1] = (byte) (newSample >> 8);
         }
     }
 }
