@@ -56,7 +56,7 @@ namespace MicaListener
         std::vector<ALuint> audioBuffers;
 
         /// @brief Count of buffers
-        const int bufferCount = 64;
+        const int bufferCount = 32;
 
         /// @brief Queue for free audio buffers
         std::queue<ALuint> freeBuffers;
