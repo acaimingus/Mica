@@ -58,8 +58,8 @@ namespace MicaListener
         }
 
         // Create many small audio buffers for smooth playback
-        audioBuffers.resize(16);
-        alGenBuffers(16, audioBuffers.data());
+        audioBuffers.resize(bufferCount);
+        alGenBuffers(bufferCount, audioBuffers.data());
         // Check if the buffers created successfully
         error = alGetError();
         if (error != AL_NO_ERROR)
