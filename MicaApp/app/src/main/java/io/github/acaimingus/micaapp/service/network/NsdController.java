@@ -12,20 +12,70 @@ import java.net.Socket;
 
 import io.github.acaimingus.micaapp.service.MicrophoneService;
 
+/**
+ * Controller class for managing Android Network Service Discovery (NSD/mDNS) and the
+ * TCP server socket that accepts connections from the desktop listener.
+ *
+ * <p>Registers the microphone service via mDNS so the desktop listener can discover it
+ * automatically on the local network, then accepts exactly one TCP connection at a time
+ * and exposes an {@link OutputStream} for sending raw audio data to that connection.</p>
+ */
 public class NsdController {
+    /**
+     * Android NSD manager used to register and unregister the mDNS service
+     */
     private NsdManager nsdManager;
+
+    /**
+     * Listener that handles NSD registration callbacks
+     */
     private NsdManager.RegistrationListener registrationListener;
+
+    /**
+     * TCP server socket that listens for incoming connections from the desktop listener
+     */
     private ServerSocket serverSocket;
+
+    /**
+     * Background thread that runs the server accept-loop
+     */
     private Thread dataSenderThread;
+
+    /**
+     * mDNS service type used to advertise and discover this microphone service
+     */
     public final String serviceType = "_micaapp._tcp";
+
+    /**
+     * Currently connected client socket (desktop listener); {@code null} when no client is connected
+     */
     private Socket receiverSocket;
+
+    /**
+     * Output stream of the connected client socket; used to write raw audio data to the listener.
+     * {@code null} when no client is connected.
+     */
     public OutputStream receiverStream;
+
+    /**
+     * Reference to the owning {@link MicrophoneService}, used to invoke connection callbacks
+     */
     private final MicrophoneService microphoneService;
 
+    /**
+     * Creates a new NsdController bound to the given {@link MicrophoneService}.
+     *
+     * @param microphoneService the service that owns this controller
+     */
     public NsdController(MicrophoneService microphoneService) {
         this.microphoneService = microphoneService;
     }
 
+    /**
+     * Starts the TCP server on a random available port and registers it as an mDNS service
+     * so the desktop listener can discover it. Runs in a background thread and accepts one
+     * client connection at a time.
+     */
     public void startNetworkServer() {
         dataSenderThread = new Thread(() -> {
             try {
@@ -73,6 +123,10 @@ public class NsdController {
         dataSenderThread.start();
     }
 
+    /**
+     * Stops the network server by unregistering the mDNS service, interrupting the server
+     * thread and closing all open sockets.
+     */
     public void stopNetworkServer() {
         try {
             if (nsdManager != null && registrationListener != null) {
@@ -94,6 +148,11 @@ public class NsdController {
         }
     }
 
+    /**
+     * Creates and assigns the {@link NsdManager.RegistrationListener} that handles mDNS
+     * registration events such as successful registration, registration failure and service
+     * unregistration.
+     */
     public void initializeRegistrationListener() {
         registrationListener = new NsdManager.RegistrationListener() {
             @Override
@@ -111,6 +170,12 @@ public class NsdController {
         };
     }
 
+    /**
+     * Registers the microphone service with Android's Network Service Discovery framework
+     * so the desktop listener can discover it via mDNS.
+     *
+     * @param port the local TCP port the server socket is listening on
+     */
     public void registerService(int port) {
         NsdServiceInfo serviceInfo = new NsdServiceInfo();
         serviceInfo.setServiceName("MicaAppMicrophoneService");
@@ -126,6 +191,10 @@ public class NsdController {
         }
     }
 
+    /**
+     * Closes and nullifies the current client output stream and client socket, if open.
+     * Safe to call when no client is connected.
+     */
     public void cleanupClientSocket() {
         if (receiverStream != null) {
             try {

@@ -18,9 +18,12 @@
 
 namespace MicaListener
 {
+    /// @brief Main launcher class that drives the service discovery and audio streaming loop
     class Launcher
     {
     public:
+        /// @brief Runs the main program loop: repeatedly discovers the Mica service and
+        ///        streams audio until a shutdown is requested
         static void Launch()
         {
             std::clog << logName << "MicaListener started..." << std::endl;
@@ -61,6 +64,8 @@ namespace MicaListener
         /// @brief The name of the service to look for
         static inline const std::string serviceName = "_micaapp._tcp";
 
+        /// @brief Waits until the Mica mDNS service is found and returns its network address
+        /// @return A NetworkConfig with the resolved IP and port; IP is empty on shutdown
         static NetworkConfig ListenForService()
         {
             std::string foundIp;
@@ -94,6 +99,9 @@ namespace MicaListener
             return {foundIp, foundPort};
         }
 
+        /// @brief Creates a virtual PulseAudio sink, connects to the given service and
+        ///        streams received audio data until the connection is lost or shutdown is requested
+        /// @param _config The network address and port of the discovered Mica service
         static void ConnectToService(const NetworkConfig &_config)
         {
             try

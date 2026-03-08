@@ -91,6 +91,11 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
      */
     ConnectionStates currentConnectionState = ConnectionStates.DISCONNECTED;
 
+    /**
+     * Service connection that binds {@link MainActivity} to {@link MicrophoneService}.
+     * On connection, registers this activity as the connection callback and syncs the UI.
+     * On disconnection, clears the callback and releases the service reference.
+     */
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -196,6 +201,10 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         gainSlider.addOnChangeListener(sliderListener);
     }
 
+    /**
+     * Called when the activity is being destroyed. Unbinds from the microphone service
+     * to prevent resource leaks.
+     */
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -232,6 +241,10 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         }
     }
 
+    /**
+     * Synchronises the UI state (mute button and connection switch) with the current state
+     * of the bound {@link MicrophoneService}. Has no effect if the service is not yet bound.
+     */
     private void updateUiState() {
         if (!isServiceBound || microphoneService == null) {
             return;
@@ -240,6 +253,11 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         connectionSwitch.setChecked(MicrophoneService.isRunning);
     }
 
+    /**
+     * Updates the mute button's label and icon to reflect whether the microphone is muted.
+     *
+     * @param isMuted {@code true} if the microphone is currently muted
+     */
     private void updateMuteButtonUI(boolean isMuted) {
         if (isMuted) {
             muteButton.setText(R.string.unmute);
@@ -263,6 +281,10 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         }
     }
 
+    /**
+     * Called when a desktop listener has successfully connected.
+     * Updates the connection status text view and shows a toast notification.
+     */
     @Override
     public void onConnected() {
         if (currentConnectionState == ConnectionStates.CONNECTED) {
@@ -276,6 +298,10 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         });
     }
 
+    /**
+     * Called when the service is attempting to establish a connection.
+     * Updates the connection status text view, starts and binds to the microphone service.
+     */
     @Override
     public void onConnecting() {
         if (currentConnectionState == ConnectionStates.CONNECTING) {
@@ -289,6 +315,11 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         });
     }
 
+    /**
+     * Called when the connection to the desktop listener has been lost or closed.
+     * Updates the connection status text view, shows a toast notification, unbinds from
+     * the service and resets the statistics display.
+     */
     @Override
     public void onDisconnected() {
         // Exit
@@ -315,6 +346,14 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         });
     }
 
+    /**
+     * Called periodically (approximately once per second) with updated network statistics.
+     * Formats and displays the network statistics in the stats text view and makes the
+     * stats divider visible.
+     *
+     * @param totalBytesSent        cumulative number of bytes sent since the service started
+     * @param currentBytesPerSecond number of bytes sent in the most recent second
+     */
     @Override
     public void onNetworkStatsUpdated(long totalBytesSent, int currentBytesPerSecond) {
         double kbPerSecond = currentBytesPerSecond / 1024.0;
