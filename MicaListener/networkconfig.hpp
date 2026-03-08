@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2026 Adam Martula
+ * This source code is licensed under the MIT license found in the LICENSE file in the root of this source tree.
+ *
+ * Description: Container class for passing a network configuration containing the IP and a port.
+ */
+
 #pragma once
 
 #include <string>

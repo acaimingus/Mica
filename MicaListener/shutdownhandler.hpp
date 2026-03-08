@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2026 Adam Martula
+ * This source code is licensed under the MIT license found in the LICENSE file in the root of this source tree.
+ *
+ * Description: Handler for a gentle shutdown of the program, where it cleans up its own resources.
+ */
+
 #pragma once
 
 #include <atomic>
