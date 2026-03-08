@@ -14,25 +14,9 @@ namespace MicaListener
     class Launcher
     {
     public:
-        void Launch()
+        static void Launch()
         {
             std::clog << logName << "MicaListener started..." << std::endl;
-            std::clog << logName << "Creating sink device..." << std::endl;
-
-            const SinkManager sinkManager;
-
-            std::clog << logName << "Sink device created successfully!" << std::endl;
-
-            setenv("PULSE_SINK", sinkManager.sinkName.c_str(), 1);
-
-            std::clog << logName << "Enforced PulseAudio Sink: " << sinkManager.sinkName << std::endl;
-            std::clog << logName << "Preparing audio player..." << std::endl;
-
-            // I don't know why this device is named Mica and I cannot figure it out
-            // But it works, so I guess that's fine?
-            audioPlayer.Initialize("Mica");
-
-            std::clog << logName << "Audio player is set up!" << std::endl;
 
             // Main loop of the program
             while (!ShutdownHandler::ShouldShutdown())
@@ -69,8 +53,6 @@ namespace MicaListener
         static inline const std::string logName = "\033[33mMAIN\033[0m\t\t";
         /// @brief The name of the service to look for
         static inline const std::string serviceName = "_micaapp._tcp";
-        /// @brief Audio player instance for the playback of the received data
-        AudioPlayer audioPlayer;
 
         static NetworkConfig ListenForService()
         {
@@ -105,10 +87,23 @@ namespace MicaListener
             return {foundIp, foundPort};
         }
 
-        void ConnectToService(const NetworkConfig &_config)
+        static void ConnectToService(const NetworkConfig &_config)
         {
             try
             {
+                std::clog << logName << "Creating sink device..." << std::endl;
+                const SinkManager sinkManager;
+                std::clog << logName << "Sink device created successfully!" << std::endl;
+
+                setenv("PULSE_SINK", sinkManager.sinkName.c_str(), 1);
+                std::clog << logName << "Enforced PulseAudio Sink: " << sinkManager.sinkName << std::endl;
+                std::clog << logName << "Preparing audio player..." << std::endl;
+                AudioPlayer audioPlayer;
+                // I don't know why this device is named Mica and I cannot figure it out
+                // But it works, so I guess that's fine?
+                audioPlayer.Initialize("Mica");
+                std::clog << logName << "Audio player is set up!" << std::endl;
+
                 const SocketClient socketClient(_config);
                 constexpr int bufferSize = 4096 * 2;
                 std::vector<uint8_t> buffer(bufferSize);
@@ -149,6 +144,5 @@ namespace MicaListener
 int main()
 {
     ShutdownHandler::Setup();
-    MicaListener::Launcher launcher;
-    launcher.Launch();
+    MicaListener::Launcher::Launch();
 }
