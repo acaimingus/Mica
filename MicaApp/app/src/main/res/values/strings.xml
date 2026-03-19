@@ -9,4 +9,9 @@
     <string name="hundred_percent" translatable="false">100 %</string>
     <string name="microphone_permission_denied">The app does not have microphone permissions. Please allow microphone access.</string>
     <string name="rate_1f_kb_s_total_1f_mb">Rate: %.1f KB/s | Total: %.1f MB</string>
+    <string name="connection_mode">Connection mode:</string>
+    <string-array name="connection_modes">
+        <item>WLAN</item>
+        <item>USB-Tethering</item>
+    </string-array>
 </resources>
