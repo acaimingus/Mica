@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.10)
 project(MicaListener VERSION 1.0.0)
 
 # Set C++ Standard
@@ -25,6 +25,16 @@ pkg_search_module(OPENAL REQUIRED openal)
 
 add_executable(MicaListener main.cpp servicediscovery.cpp audioplayer.cpp socketclient.cpp
         servicediscovery.cpp)
+
+# Set O2 optimization for the release
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
+
+# Set LTO if it's supported
+include(CheckIPOSupported)
+check_ipo_supported(RESULT lto_supported OUTPUT lto_error)
+if(lto_supported)
+    set_property(TARGET MicaListener PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
 
 # Include Directories
 target_include_directories(MicaListener PUBLIC
