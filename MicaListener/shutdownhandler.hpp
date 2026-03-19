@@ -19,7 +19,7 @@ public:
     /// @param signal The signal sent by the OS
     static void HandleShutdown(int signal)
     {
-        std::clog << logName << "Shutdown requested" << std::endl;
+        std::clog << logName << "Shutdown requested with the signal " << signal << std::endl;
         shouldShutdown.store(true);
     }
 

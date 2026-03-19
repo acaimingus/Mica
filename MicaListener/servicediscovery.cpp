@@ -153,11 +153,11 @@ namespace MicaListener
         }
     }
 
-    void ServiceDiscovery::BrowseCallback(AvahiServiceBrowser *_browser, AvahiIfIndex _interface,
-                                          AvahiProtocol _protocol,
+    void ServiceDiscovery::BrowseCallback([[maybe_unused]] AvahiServiceBrowser *_browser, [[maybe_unused]] AvahiIfIndex _interface,
+                                          [[maybe_unused]] AvahiProtocol _protocol,
                                           const AvahiBrowserEvent _event, const char *_name, const char *_type,
                                           const char *_domain,
-                                          AvahiLookupResultFlags _flags, void *_userData)
+                                          [[maybe_unused]] AvahiLookupResultFlags _flags, void *_userData)
     {
         auto *self = static_cast<ServiceDiscovery *>(_userData);
         std::clog << logName << "Browser Callback: ";
@@ -198,11 +198,11 @@ namespace MicaListener
         }
     }
 
-    void ServiceDiscovery::ResolveCallback(AvahiServiceResolver *_resolver, AvahiIfIndex _interface,
-                                           AvahiProtocol _protocol,
-                                           AvahiResolverEvent _event, const char *_name, const char *_type,
-                                           const char *_domain, const char *_hostName, const AvahiAddress *_address,
-                                           uint16_t _port, AvahiStringList *_text, AvahiLookupResultFlags _flags,
+    void ServiceDiscovery::ResolveCallback([[maybe_unused]] AvahiServiceResolver *_resolver, [[maybe_unused]] AvahiIfIndex _interface,
+                                           [[maybe_unused]] AvahiProtocol _protocol,
+                                           AvahiResolverEvent _event, const char *_name, [[maybe_unused]] const char *_type,
+                                           [[maybe_unused]] const char *_domain, [[maybe_unused]] const char *_hostName, const AvahiAddress *_address,
+                                           uint16_t _port, [[maybe_unused]] AvahiStringList *_text, [[maybe_unused]] AvahiLookupResultFlags _flags,
                                            void *_userData)
     {
         const auto *self = static_cast<ServiceDiscovery *>(_userData);

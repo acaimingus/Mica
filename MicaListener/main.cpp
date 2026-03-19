@@ -79,7 +79,7 @@ namespace MicaListener
             serviceDiscovery.SetOnServiceLost(
                 [&](const std::string &name)
                 {
-                    std::clog << logName << "Connection loss acknowledged." << std::endl;
+                    std::clog << logName << "Connection loss  with " << name << " acknowledged." << std::endl;
                 });
 
             // Set the Callback when the Service gets resolved

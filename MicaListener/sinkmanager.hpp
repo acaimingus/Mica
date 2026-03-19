@@ -96,7 +96,7 @@ namespace MicaListener
         {
             std::array<char, 128> buffer{};
             std::string result;
-            const std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(_command.c_str(), "r"), pclose);
+            const std::unique_ptr<FILE, int(*)(FILE*)> pipe(popen(_command.c_str(), "r"), pclose);
             if (!pipe)
             {
                 std::cerr << "popen() failed!" << std::endl;
