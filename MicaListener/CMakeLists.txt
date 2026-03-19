@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(MicaListener VERSION 0.1.0)
+project(MicaListener VERSION 1.0.0)
 
 # Set C++ Standard
 set(CMAKE_CXX_STANDARD 23)
