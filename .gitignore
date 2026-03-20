@@ -1,1 +1,6 @@
+# VS Code files
 .vscode
+
+# Build outputs
+build/
+deb/
