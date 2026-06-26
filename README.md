@@ -14,7 +14,16 @@ If you use a relatively mainstream Linux distribution, all requirements should b
 
 ## Installation
 
-### 1. Linux (PC)
+### Linux (Listener)
+
+#### General instructions
+
+To install the Mica listener on your PC two things have to be done.
+
+1. Download the executable and put it in the desired location (for example /usr/bin/)
+2. Autostart has to be setup for MicaListener (This varies between distros, so a general approach cannot be described)
+
+#### Debian
 
 The easiest way to install the listener is by using the provided Debian package (`.deb`) from the Releases page:
 
@@ -22,11 +31,9 @@ The easiest way to install the listener is by using the provided Debian package 
 2. Double-click to install it via your GUI package manager, or install it via terminal: `sudo apt install ./MicaListener-1.0.0-1.deb`
 3. **Important:** Restart your PC to allow systemd to properly hook the background service into your user session (simply logging out and back in is usually not enough).
 
-### 2. Android (Mobile)
+### 2. Android (Client)
 
-For the Android side the APK simply has to be downloaded, transferred to your mobile device and then installed.
-
-The way it works is rather simple: Install the Android app on your phone and the listener on your PC. After that simply open the Android app and use the connection switch to connect to your PC. It is both possible per WLAN or per USB-tethering. For WLAN, simply have your phone in the same network as your PC and it should be able to automatically resolve a connection. If this is not the case, then USB-tethering is an option. Plug in your phone per USB to your PC and set your phone to USB-tethering mode. After that simply open the app and try to establish a connection like normal and it will automatically make the connection per USB-tethering.
+Download and install the Android app on your phone and the listener on your PC. Open the Android app and use the connection switch to connect to your PC. It is possible to connect either per WLAN or per USB-tethering. For a WLAN connection, simply have your phone in the same network as your PC and it should be able to automatically resolve a connection. If this is not the case, then USB-tethering also is an option. Plug in your phone per USB to your PC and set your phone to USB-tethering mode. Then open the app and try to establish a connection like normal and it will automatically make the connection per USB-tethering.
 
 ### 3. Usage
 
@@ -60,6 +67,8 @@ When doing rapid, repeated connection attempts, the system might cache the IP as
 ## Contributing
 
 Contributions to the project are welcome and highly appreciated! If you find a bug or have a feature you would like to add, feel free to open an issue or submit a pull request.
+
+A template has been created for creating issues. Please use that template.
 
 ## Development requirements
 
