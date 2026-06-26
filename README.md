@@ -1,83 +1,114 @@
 # Mica
 
-## Description
+Turn your Android phone into a wireless or USB-connected microphone for your Linux system.
 
-Turn your Android phone into a wireless (or USB) microphone for your Linux system.
+## Features
 
-## System requirements (Linux Listener)
+- **Low Resource Usage:** Minimal CPU (~0.3% per core) and RAM (~5MB) footprint
+- **Dual Connectivity:** Connect via Wi-Fi for convenience or USB tethering for low latency
+- **Automatic Discovery:** Seamless service discovery using Zeroconf (mDNS)
+- **Simple Setup:** Automatic audio device configuration on supported systems
+- **Lightweight:** Only ~100KB of disk space required
 
-If you use a relatively mainstream Linux distribution, all requirements should be easily met out of the box. Mica was designed with the following core components in mind:
+## System Requirements
 
-- [**Avahi**](https://avahi.org/): Required for Zeroconf DNS service resolving. Preinstalled on most common distributions.
-- [**PulseAudio / PipeWire**](https://wiki.debian.org/PulseAudio): Required to manage the virtual audio devices for the microphone. Preinstalled on almost all desktop distributions.
-- [**Systemd**](https://systemd.io/): Used for setting up the background autostart service for the listener. If your system relies on a different init system, you will need to configure the autostart manually.
+The following components are required on your Linux PC. Most mainstream distributions include these by default:
+
+- [**Avahi**](https://avahi.org/) – Zeroconf DNS service discovery
+- [**PulseAudio or PipeWire**](https://wiki.debian.org/PulseAudio) – Virtual audio device management
+- [**Systemd**](https://systemd.io/) – Automatic service startup (optional; manual configuration needed for other init systems)
 
 ## Installation
 
-### Linux (Listener)
+### Linux Listener
 
-#### General instructions
+#### Debian-based Systems (Recommended)
 
-To install the Mica listener on your PC two things have to be done.
+The simplest installation method uses the provided Debian package:
 
-1. Download the executable and put it in the desired location (for example /usr/bin/)
-2. Autostart has to be setup for MicaListener (This varies between distros, so a general approach cannot be described)
+1. Download the `.deb` package from the [Releases](https://github.com/acaimingus/Mica/releases) page
+2. Install via GUI package manager or terminal:
+   ```bash
+   sudo apt install ./MicaListener-1.0.0-1.deb
+   ```
+3. **Important:** Restart your PC to activate the systemd service in your user session (logging out and back in is insufficient)
 
-#### Debian
+#### Manual Installation
 
-The easiest way to install the listener is by using the provided Debian package (`.deb`) from the Releases page:
+For non-Debian systems:
 
-1. Download the `.deb` package.
-2. Double-click to install it via your GUI package manager, or install it via terminal: `sudo apt install ./MicaListener-1.0.0-1.deb`
-3. **Important:** Restart your PC to allow systemd to properly hook the background service into your user session (simply logging out and back in is usually not enough).
+1. Download the executable and place it in your preferred location (e.g., `/usr/bin/`)
+2. Configure autostart according to your system's service manager (varies by distribution)
 
-### 2. Android (Client)
+### Android Client
 
-Download and install the Android app on your phone and the listener on your PC. Open the Android app and use the connection switch to connect to your PC. It is possible to connect either per WLAN or per USB-tethering. For a WLAN connection, simply have your phone in the same network as your PC and it should be able to automatically resolve a connection. If this is not the case, then USB-tethering also is an option. Plug in your phone per USB to your PC and set your phone to USB-tethering mode. Then open the app and try to establish a connection like normal and it will automatically make the connection per USB-tethering.
+1. Download and install the Mica app on your Android phone from the [Releases](https://github.com/acaimingus/Mica/releases) page
+2. Ensure the Linux listener is running on your PC
+3. Open the Mica app and toggle the connection switch
 
-### 3. Usage
+## Usage
 
-The usage of the application is designed to be as simple as possible:
+Once installed, connecting your phone to your PC is straightforward:
 
-1. Ensure the listener is running on your PC.
-2. Open the Mica app on your Android phone.
-3. Use the connection switch to link your phone to your PC.
+1. Start the listener on your PC
+2. Open the Mica app on your Android phone
+3. Toggle the connection switch to connect
 
-You have two options for connecting:
+### Connection Methods
 
-- **Wi-Fi (WLAN):** Ensure both your phone and PC are on the same local network. The app will automatically discover the PC and establish a connection.
-- **USB-Tethering:** If your Wi-Fi network blocks device discovery or you want minimal latency, plug your phone into your PC via USB and enable "USB Tethering" in your Android settings. Open the Mica app and connect normally. It will automatically route the audio through the USB connection.
+**Wi-Fi (Recommended for convenience):**
+
+- Ensure your phone and PC are on the same local network
+- The app automatically discovers and connects to your PC
+
+**USB Tethering (Lower latency):**
+
+- Connect your phone to your PC via USB cable
+- Enable USB Tethering in your Android settings
+- Open the Mica app and toggle the connection switch
+- The app automatically routes audio through the USB connection
 
 <img src="Documentation/1.png" width="200" alt="Application screenshot">
 
-## Listener Resource usage
+## Performance
 
-The architecture is designed in a way where the listener on the PC side is actively waiting for a connection. The PC listener is designed to be extremely lightweight.
+The listener is architected for minimal resource consumption (Measured on a system with a Ryzen 7 5700X and 16GB RAM):
 
-- **CPU:** ~0.3% of a single core while active, ~0% while inactive (Ryzen 7 5700X)
-- **RAM:** ~5MB for the listener while active, ~1MB for the process while inactive (not counting shared libraries)
-- **Storage:** ~100kB of disk space
+| Resource | Usage |
+|----------|-------|
+| **CPU** | ~0.3% of a single core (active) |
+| **RAM** | ~5MB active, ~1MB idle |
+| **Storage** | ~100KB |
 
 ## Troubleshooting
 
-### The listener keeps trying to connect to the old IP
+### IP Address Caching Issues
 
-When doing rapid, repeated connection attempts, the system might cache the IP associated with the service and try to reuse it, even if the phone has acquired a new IP-port combination. This can be resolved by flushing the Avahi cache on the PC by doing: `sudo systemctl restart avahi-daemon`
+When doing rapid, repeated connection attempts, the system might cache the IP associated with the service and try to reuse it, even if the phone has acquired a new IP-port combination. Resolve this by flushing the Avahi cache:
+
+```bash
+sudo systemctl restart avahi-daemon
+```
+
+## Development
+
+### Development System Requirements
+
+To compile the C++ listener from source on Debian-based systems, install the following:
+
+```bash
+sudo apt install cmake ninja-build build-essential pkg-config libavahi-client-dev libopenal-dev
+```
+
+For developing the Android Client only Android Studio and the Android SDK are required.
 
 ## Contributing
 
-Contributions to the project are welcome and highly appreciated! If you find a bug or have a feature you would like to add, feel free to open an issue or submit a pull request.
+Contributions are welcome and greatly appreciated! If you find a bug or have a feature you would like to add, feel free to open an issue or submit a pull request. To contribute:
 
-A template has been created for creating issues. Please use that template.
-
-## Development requirements
-
-To set up a Debian or derivative system for compiling the C++ listener from source, the following packages are required:
-
-`sudo apt install cmake ninja-build build-essential pkg-config libavahi-client-dev libopenal-dev`
-
-To develop the Android app, only Android Studio and the Android SDK are required.
+1. **Report Issues:** Use the provided issue template for bug reports and feature requests
+2. **Submit Changes:** Fork the repository, make your changes, and submit a pull request
 
 ## License
 
-Distributed under the MIT License. See LICENSE for more information.
+Distributed under the MIT License. See [LICENSE](LICENSE) for details.
