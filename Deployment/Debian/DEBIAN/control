@@ -1,0 +1,14 @@
+Package: micalistener
+Version: 1.0.0
+Section: net
+Priority: optional
+Architecture: amd64
+Depends: libavahi-client3, libavahi-common3, libc6, libgcc-s1, libopenal1, libstdc++6, systemd
+Maintainer: Adam Martula <martulaadam@gmail.com>
+Description: Audio receiver daemon for the Mica Android app.
+ MicaListener is a background service that waits for incoming
+ network connections from the Android app and plays audio streams locally.
+ It enables the usage of your phone as a microphone this way.
+ It uses Avahi (Zeroconf) for automatic device discovery
+ in the local network and OpenAL for audio output.
+
