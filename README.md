@@ -24,7 +24,7 @@ The following components are required on your Linux PC. Most mainstream distribu
 
 #### Debian-based Systems
 
-The simplest installation method uses the provided Debian package:
+On Debian-based systems the .deb package in the GitHub releases is the easiest way to install:
 
 1. Download the `.deb` package from the [Releases](https://github.com/acaimingus/Mica/releases) page
 2. Install via GUI package manager or terminal:
