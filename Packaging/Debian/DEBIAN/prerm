@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "remove" ] || [ "$1" = "deconfigure" ]; then
+    # Remove the autostart
+    systemctl --global disable micalistener.service || true
+    # Update systemd
+    systemctl daemon-reload || true
+fi
+
+exit 0

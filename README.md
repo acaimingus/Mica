@@ -22,20 +22,26 @@ The following components are required on your Linux PC. Most mainstream distribu
 
 ### Linux Listener
 
-#### Debian-based Systems (Recommended)
+#### Debian-based Systems
 
-The simplest installation method uses the provided Debian package:
+On Debian-based systems the .deb package in the GitHub releases is the easiest way to install:
 
 1. Download the `.deb` package from the [Releases](https://github.com/acaimingus/Mica/releases) page
 2. Install via GUI package manager or terminal:
    ```bash
-   sudo apt install ./MicaListener-1.0.0-1.deb
+   sudo apt install ./MicaListener_1.0.0_amd64.deb
    ```
 3. **Important:** Restart your PC to activate the systemd service in your user session (logging out and back in is insufficient)
 
+#### Arch-based Systems
+
+For Arch Linux systems, an [AUR](https://aur.archlinux.org/packages/mica-bin) was created by [C9Glax](https://github.com/C9Glax).
+
+A guide how to install an AUR package can be found [here](https://wiki.archlinux.org/title/Arch_User_Repository).
+
 #### Manual Installation
 
-For non-Debian systems:
+For other systems:
 
 1. Download the executable and place it in your preferred location (e.g., `/usr/bin/`)
 2. Configure autostart according to your system's service manager (varies by distribution)
@@ -94,13 +100,28 @@ sudo systemctl restart avahi-daemon
 
 ### Development System Requirements
 
-To compile the C++ listener from source on Debian-based systems, install the following:
+To compile the C++ listener from source the following packages are required on a Debian-based system:
+
+```bash
+cmake
+ninja-build
+build-essential
+pkg-config
+libavahi-client-dev
+libopenal-dev
+```
+
+They can be installed with:
 
 ```bash
 sudo apt install cmake ninja-build build-essential pkg-config libavahi-client-dev libopenal-dev
 ```
 
+On other systems additional dependencies may be needed.
+
 For developing the Android Client only Android Studio and the Android SDK are required.
+
+For packaging source code, there is an instruction under `Packaging/PACKAGING.md`.
 
 ## Contributing
 

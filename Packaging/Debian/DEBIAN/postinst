@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "configure" ]; then
+    # Reload daemons to find the new service
+    systemctl daemon-reload || true
+    
+    # Activate autostart
+    systemctl --global enable micalistener.service || true
+fi
+
+exit 0
