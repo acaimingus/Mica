@@ -7,7 +7,7 @@
 
 #include "socketclient.hpp"
 
-namespace MicaListener
+namespace MicaListener::MicaListenerService::Network
 {
     SocketClient::SocketClient(const NetworkConfig &_config)
     {
@@ -16,7 +16,7 @@ namespace MicaListener
         sock = socket(AF_INET, SOCK_STREAM, 0);
         if (sock == -1)
         {
-            throw std::runtime_error("Could not create socket: " + std::string(strerror(errno)));
+            throw std::runtime_error("Could not create socket: " + std::string(std::strerror(errno)));
         }
 
         // Set 1s timeout

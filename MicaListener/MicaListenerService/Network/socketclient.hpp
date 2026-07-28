@@ -17,7 +17,7 @@
 
 #include "networkconfig.hpp"
 
-namespace MicaListener
+namespace MicaListener::MicaListenerService::Network
 {
     class SocketClient
     {

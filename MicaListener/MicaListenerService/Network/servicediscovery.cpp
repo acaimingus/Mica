@@ -7,10 +7,10 @@
 
 #include "servicediscovery.hpp"
 
-namespace MicaListener
+namespace MicaListener::MicaListenerService::Network
 {
     using ServiceLostCallback = std::function<void(const std::string &serviceName)>;
-    using ServiceResolvedCallback = std::function<void(const MicaListener::NetworkConfig &)>;
+    using ServiceResolvedCallback = std::function<void(const NetworkConfig &)>;
 
     ServiceDiscovery::ServiceDiscovery(std::string _serviceName) : serviceName(std::move(_serviceName))
     {
@@ -22,7 +22,7 @@ namespace MicaListener
         CreateClient();
 
         // Instead of using the normal poll loop manually loop while checking if the application should shut down
-        while (!ShutdownHandler::ShouldShutdown())
+        while (!Lifecycle::ShutdownHandler::ShouldShutdown())
         {
             if (avahi_simple_poll_iterate(simplePoll.get(), 500) != 0)
             {
@@ -92,7 +92,6 @@ namespace MicaListener
         {
             std::cerr << logName << "Failed to create the Avahi Client!" << avahi_strerror(error) << std::endl;
             avahi_simple_poll_quit(simplePoll.get());
-            return;
         }
     }
 
@@ -132,7 +131,7 @@ namespace MicaListener
     void ServiceDiscovery::ClientCallback(AvahiClient *_client, AvahiClientState _state, void *_userData)
     {
         auto *self = static_cast<ServiceDiscovery *>(_userData);
-        std::clog << MicaListener::ServiceDiscovery::logName << "Client Callback: ";
+        std::clog << logName << "Client Callback: ";
         self->HandleClientState(_client, _state);
     }
 
@@ -206,7 +205,7 @@ namespace MicaListener
                                            void *_userData)
     {
         const auto *self = static_cast<ServiceDiscovery *>(_userData);
-        std::clog << MicaListener::ServiceDiscovery::logName << "Resolve Callback: ";
+        std::clog << logName << "Resolve Callback: ";
         self->HandleResolverState(_event, _name, _address, _port);
     }
 

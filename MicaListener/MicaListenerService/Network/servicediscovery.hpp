@@ -18,12 +18,12 @@
 #include <utility>
 
 #include "networkconfig.hpp"
-#include "shutdownhandler.hpp"
+#include "../Lifecycle/shutdownhandler.hpp"
 
-namespace MicaListener
+namespace MicaListener::MicaListenerService::Network
 {
     using ServiceLostCallback = std::function<void(const std::string &serviceName)>;
-    using ServiceResolvedCallback = std::function<void(const MicaListener::NetworkConfig &)>;
+    using ServiceResolvedCallback = std::function<void(const NetworkConfig &)>;
 
     class ServiceDiscovery
     {

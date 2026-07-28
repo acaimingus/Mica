@@ -7,7 +7,7 @@
 
 #include "audioplayer.hpp"
 
-namespace MicaListener
+namespace MicaListener::MicaListenerService::Audio
 {
     const std::string AudioPlayer::logName = "\033[35mAUDIOPLAYER\033[0m\t";
 

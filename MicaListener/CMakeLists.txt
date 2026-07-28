@@ -23,8 +23,9 @@ pkg_search_module(AVAHI_CLIENT REQUIRED avahi-client)
 find_package(OpenAL REQUIRED)
 pkg_search_module(OPENAL REQUIRED openal)
 
-add_executable(MicaListener main.cpp servicediscovery.cpp audioplayer.cpp socketclient.cpp
-        servicediscovery.cpp)
+add_executable(MicaListener main.cpp MicaListenerService/Network/servicediscovery.cpp MicaListenerService/Audio/audioplayer.cpp MicaListenerService/Network/socketclient.cpp
+        MicaListenerService/Lifecycle/launcher.hpp
+)
 
 # Set O2 optimization for the release
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")

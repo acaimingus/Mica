@@ -15,7 +15,7 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 
-namespace MicaListener
+namespace MicaListener::MicaListenerService::Audio
 {
     class AudioPlayer
     {

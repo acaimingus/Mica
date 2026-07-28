@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <fstream>
 
-namespace MicaListener
+namespace MicaListener::MicaListenerService::Audio
 {
     class SinkManager
     {

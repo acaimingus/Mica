@@ -10,7 +10,7 @@
 #include <string>
 #include <utility>
 
-namespace MicaListener
+namespace MicaListener::MicaListenerService::Network
 {
     /// @brief Class for storing the information of a network configuration of a service
     class NetworkConfig
