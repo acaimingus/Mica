@@ -1,0 +1,11 @@
+[Unit]
+Description=Mica Listener
+After=network.target sound.target
+
+[Service]
+ExecStart=/usr/bin/MicaListener
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
