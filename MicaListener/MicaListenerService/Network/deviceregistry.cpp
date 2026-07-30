@@ -15,14 +15,6 @@ namespace MicaListener::MicaListenerService::Network
     {
         std::lock_guard<std::mutex> lock(registryMutex);
 
-        const auto activeDevices = GetActiveDevices();
-        std::clog << "=== Aktuelle Geräte in Registry (" << activeDevices.size() << ") ===" << std::endl;
-        for (const auto &dev : activeDevices)
-        {
-            std::clog << "  -> " << dev.GetDeviceName()
-                      << " [" << dev.GetIp() << ":" << dev.GetPort() << "]" << std::endl;
-        }
-
         NetworkConfig newConfig(ip, port, name, std::chrono::steady_clock::now());
 
         auto [it, inserted] = devices.insert_or_assign(name, newConfig);
