@@ -1,4 +1,4 @@
-package io.github.acaimingus.micaapp.service.audio;
+package io.github.acaimingus.micaapp.audio;
 
 /**
  * Processor class for applying gain/volume adjustments to raw 16-bit PCM audio data.

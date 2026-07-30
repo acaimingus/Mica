@@ -1,8 +1,8 @@
-package io.github.acaimingus.micaapp.activity;
+package io.github.acaimingus.micaapp.network;
 
 /**
  * Callback interface for receiving connection state changes from {@link io.github.acaimingus.micaapp.service.MicrophoneService}.
- * Implemented by the UI layer (e.g. {@link MainActivity}) to update the interface in response
+ * Implemented by the UI layer to update the interface in response
  * to network events.
  */
 public interface ConnectionCallbacks {

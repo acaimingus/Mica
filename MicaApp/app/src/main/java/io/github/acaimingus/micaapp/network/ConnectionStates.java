@@ -1,4 +1,4 @@
-package io.github.acaimingus.micaapp.activity;
+package io.github.acaimingus.micaapp.network;
 
 /**
  * Simple enum for representing the states a connection can be in

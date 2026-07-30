@@ -20,12 +20,12 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import io.github.acaimingus.micaapp.R;
-import io.github.acaimingus.micaapp.activity.ConnectionCallbacks;
+import io.github.acaimingus.micaapp.network.ConnectionCallbacks;
 import io.github.acaimingus.micaapp.activity.MainActivity;
-import io.github.acaimingus.micaapp.service.audio.AudioProcessor;
-import io.github.acaimingus.micaapp.service.audio.IAudioDataListener;
-import io.github.acaimingus.micaapp.service.audio.RecordingController;
-import io.github.acaimingus.micaapp.service.network.NsdController;
+import io.github.acaimingus.micaapp.audio.AudioProcessor;
+import io.github.acaimingus.micaapp.audio.IAudioDataListener;
+import io.github.acaimingus.micaapp.audio.RecordingController;
+import io.github.acaimingus.micaapp.network.NsdController;
 
 /**
  * Foreground service responsible for recording audio from the microphone and transmitting
@@ -34,7 +34,7 @@ import io.github.acaimingus.micaapp.service.network.NsdController;
  * <p>The service creates a TCP server via {@link NsdController},
  * advertises itself over mDNS and continuously streams raw 16-bit PCM audio to any connected
  * client. Volume control and mute functionality are supported via
- * {@link io.github.acaimingus.micaapp.service.audio.AudioProcessor}.</p>
+ * {@link io.github.acaimingus.micaapp.audio.AudioProcessor}.</p>
  */
 public class MicrophoneService extends Service implements IAudioDataListener {
 
@@ -269,7 +269,7 @@ public class MicrophoneService extends Service implements IAudioDataListener {
     }
 
     /**
-     * Called by {@link io.github.acaimingus.micaapp.service.audio.RecordingController} whenever
+     * Called by {@link io.github.acaimingus.micaapp.audio.RecordingController} whenever
      * a new chunk of microphone data is available.
      * If muted, writes silence to the network stream instead of real audio.
      * Otherwise, applies the current gain and writes the data to the network stream.

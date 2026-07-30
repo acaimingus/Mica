@@ -1,4 +1,4 @@
-package io.github.acaimingus.micaapp.service.audio;
+package io.github.acaimingus.micaapp.audio;
 
 /**
  * Interface for receiving audio data from the microphone and passing it to the service.

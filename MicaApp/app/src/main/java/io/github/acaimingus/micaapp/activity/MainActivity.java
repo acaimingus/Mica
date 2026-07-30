@@ -34,6 +34,8 @@ import java.util.List;
 import io.github.acaimingus.micaapp.R;
 import io.github.acaimingus.micaapp.service.LocalBinder;
 import io.github.acaimingus.micaapp.service.MicrophoneService;
+import io.github.acaimingus.micaapp.network.ConnectionCallbacks;
+import io.github.acaimingus.micaapp.network.ConnectionStates;
 
 /**
  * Main activity for the app

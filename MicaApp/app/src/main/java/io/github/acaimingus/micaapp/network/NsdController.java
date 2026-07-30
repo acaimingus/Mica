@@ -1,4 +1,4 @@
-package io.github.acaimingus.micaapp.service.network;
+package io.github.acaimingus.micaapp.network;
 
 import android.content.Context;
 import android.net.nsd.NsdManager;
