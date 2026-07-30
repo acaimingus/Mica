@@ -71,6 +71,7 @@ namespace MicaListener::MicaListenerService::Lifecycle
         {
             std::string foundIp;
             int foundPort = 0;
+            std::string foundName;
 
             // Initialize the Service Discovery
             std::clog << logName << "Creating the Service Discovery for '" << serviceName << "'..." << std::endl;
@@ -89,6 +90,7 @@ namespace MicaListener::MicaListenerService::Lifecycle
                 {
                     foundIp = _config.GetIp();
                     foundPort = _config.GetPort();
+                    foundName = _config.GetDeviceName();
                     std::clog << logName << "Received Service info: " << foundIp << " / " << foundPort << std::endl;
                     serviceDiscovery.StopService();
                 });
@@ -97,7 +99,7 @@ namespace MicaListener::MicaListenerService::Lifecycle
             std::clog << logName << "Looking for services..." << std::endl;
             serviceDiscovery.FindService();
 
-            return {foundIp, foundPort};
+            return Network::NetworkConfig(foundIp, foundPort, foundName, std::chrono::steady_clock::now());
         }
 
         /// @brief Creates a virtual PulseAudio sink, connects to the given service and

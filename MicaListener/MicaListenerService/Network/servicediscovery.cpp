@@ -223,8 +223,7 @@ namespace MicaListener::MicaListenerService::Network
                 avahi_address_snprint(address, sizeof(address), _address);
                 std::clog << "Avahi Service Resolver found the Service: " << _name << " / " << address << " / " <<
                         _port << std::endl;
-                std::clog << logName << "Returning info to main..." << std::endl;
-                const NetworkConfig networkConfig(address, _port);
+                const NetworkConfig networkConfig(address, _port, _name ? _name : "", std::chrono::steady_clock::now());
                 onServiceResolved(networkConfig);
                 break;
         }

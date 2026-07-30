@@ -23,7 +23,11 @@ pkg_search_module(AVAHI_CLIENT REQUIRED avahi-client)
 find_package(OpenAL REQUIRED)
 pkg_search_module(OPENAL REQUIRED openal)
 
-add_executable(MicaListener main.cpp MicaListenerService/Network/servicediscovery.cpp MicaListenerService/Audio/audioplayer.cpp MicaListenerService/Network/socketclient.cpp
+add_executable(MicaListener main.cpp 
+        MicaListenerService/Network/servicediscovery.cpp 
+        MicaListenerService/Network/deviceregistry.cpp
+        MicaListenerService/Audio/audioplayer.cpp 
+        MicaListenerService/Network/socketclient.cpp
         MicaListenerService/Lifecycle/launcher.hpp
 )
 
