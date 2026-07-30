@@ -178,7 +178,7 @@ public class NsdController {
      */
     public void registerService(int port) {
         NsdServiceInfo serviceInfo = new NsdServiceInfo();
-        serviceInfo.setServiceName("MicaAppMicrophoneService");
+        serviceInfo.setServiceName(DeviceIdentification.getDeviceName(microphoneService));
         serviceInfo.setServiceType(serviceType);
         serviceInfo.setPort(port);
 

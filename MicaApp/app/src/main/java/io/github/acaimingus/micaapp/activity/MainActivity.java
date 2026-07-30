@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.github.acaimingus.micaapp.R;
+import io.github.acaimingus.micaapp.network.DeviceIdentification;
 import io.github.acaimingus.micaapp.service.LocalBinder;
 import io.github.acaimingus.micaapp.service.MicrophoneService;
 import io.github.acaimingus.micaapp.network.ConnectionCallbacks;
@@ -64,6 +65,12 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
      * Material text view for the stats
      */
     private MaterialTextView statsText;
+
+    /**
+     * Material text view for displaying the device name
+     */
+    private MaterialTextView deviceNameText;
+
     /**
      * Material divider for the stats, gets toggled when stats are visible
      */
@@ -150,6 +157,8 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         gainText = findViewById(R.id.gainText);
         statsText = findViewById(R.id.statsText);
         statsDivider = findViewById(R.id.statsDivider);
+        deviceNameText = findViewById(R.id.deviceNameText);
+
 
         // Prefill the text for the gain
         gainText.setText(R.string.hundred_percent);
@@ -341,11 +350,27 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
                 unbindService(serviceConnection);
                 isServiceBound = false;
             }
-            // Reset the stats text to be cleared
+            // Reset the stats text and hide it
             statsText.setText("");
-            statsDivider.setVisibility(INVISIBLE);
+            toggleStatsVisibility(false);
             stopService(serviceIntent);
         });
+    }
+
+    private void toggleStatsVisibility(boolean toggle)
+    {
+        if (toggle)
+        {
+            statsText.setVisibility(VISIBLE);
+            deviceNameText.setVisibility(VISIBLE);
+            statsDivider.setVisibility(VISIBLE);
+        }
+        else
+        {
+            statsText.setVisibility(INVISIBLE);
+            deviceNameText.setVisibility(INVISIBLE);
+            statsDivider.setVisibility(INVISIBLE);
+        }
     }
 
     /**
@@ -364,6 +389,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         String stats = String.format(getString(R.string.rate_1f_kb_s_total_1f_mb), kbPerSecond, totalMb);
 
         statsText.setText(stats);
-        statsDivider.setVisibility(VISIBLE);
+        deviceNameText.setText(DeviceIdentification.getDeviceName(this));
+        toggleStatsVisibility(true);
     }
 }
