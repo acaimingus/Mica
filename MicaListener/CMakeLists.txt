@@ -23,6 +23,9 @@ pkg_search_module(AVAHI_CLIENT REQUIRED avahi-client)
 find_package(OpenAL REQUIRED)
 pkg_search_module(OPENAL REQUIRED openal)
 
+# Find libnotify
+pkg_search_module(LIBNOTIFY REQUIRED libnotify)
+
 add_executable(MicaListener MicaListenerService/main.cpp
         MicaListenerService/Network/servicediscovery.cpp 
         MicaListenerService/Network/deviceregistry.cpp
@@ -50,10 +53,12 @@ endif()
 target_include_directories(MicaListener PUBLIC
     ${AVAHI_CLIENT_INCLUDE_DIRS}
     ${OPENAL_INCLUDE_DIRS}
+    ${LIBNOTIFY_INCLUDE_DIRS}
 )
 
 # Link Libraries
 target_link_libraries(MicaListener PUBLIC
     ${AVAHI_CLIENT_LIBRARIES}
     ${OPENAL_LIBRARIES}
+    ${LIBNOTIFY_LIBRARIES}
 )

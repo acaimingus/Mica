@@ -7,7 +7,9 @@
 
 #include "DeviceSelection/deviceselectionhandler.cpp"
 
-int main()
+int main(int argc, char* argv[])
 {
+    (void)argc;
+    (void)argv;
     MicaPairingService::DeviceSelection::DeviceSelectionHandler::HandleDeviceSelection();
 }
