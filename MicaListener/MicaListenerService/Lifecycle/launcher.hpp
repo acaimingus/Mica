@@ -218,7 +218,7 @@ namespace MicaListener::MicaListenerService::Lifecycle
             const std::string exePath = GetExecutableDir() + "/MicaPairingService";
 
             std::vector<std::string> args = {exePath};
-            for (auto activeDevices = deviceRegistry.GetActiveDevices(); const auto &dev : activeDevices)
+            for (const auto activeDevices = deviceRegistry.GetActiveDevices(); const auto &dev : activeDevices)
             {
                 args.push_back(dev.GetDeviceName() + "," + dev.GetIp() + "," + std::to_string(dev.GetPort()));
             }
@@ -261,7 +261,7 @@ namespace MicaListener::MicaListenerService::Lifecycle
             auto future = syncPairing->prom.get_future();
             std::optional<Network::NetworkConfig> selectedConfigOpt = std::nullopt;
 
-            if (future.wait_for(std::chrono::minutes(3)) == std::future_status::ready)
+            if (future.wait_for(std::chrono::minutes(1)) == std::future_status::ready)
             {
                 selectedConfigOpt = future.get();
             }
