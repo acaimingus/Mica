@@ -1,4 +1,4 @@
-#include "../Tui/deviceselectiontui.cpp"
+#include "../Tui/pairingconfirmationtui.cpp"
 
 namespace MicaPairingService::DeviceSelection
 {
@@ -7,10 +7,10 @@ namespace MicaPairingService::DeviceSelection
     public:
         static void HandleDeviceSelection()
         {
-            Tui::DeviceSelectionTui deviceSelectionTui;
+            Tui::PairingConfirmationTui pairingConfirmationTui;
 
             std::cout << "Launched the TUI succesfully! yippie!" << std::endl;
-            deviceSelectionTui.ShowDeviceSelectionTui();
+            pairingConfirmationTui.ShowPairingConfirmationTui();
         }
     };
 }

@@ -5,11 +5,11 @@
  * Description: Main entry point of the pairing service when executed.
  */
 
+#include "Terminal/terminallauncher.hpp"
 #include "DeviceSelection/deviceselectionhandler.cpp"
 
 int main(int argc, char* argv[])
 {
-    (void)argc;
-    (void)argv;
+    MicaPairingService::Terminal::TerminalLauncher::EnsureTerminalWindow(argc, argv);
     MicaPairingService::DeviceSelection::DeviceSelectionHandler::HandleDeviceSelection();
 }
