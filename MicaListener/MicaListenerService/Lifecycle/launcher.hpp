@@ -64,7 +64,8 @@ namespace MicaListener::MicaListenerService::Lifecycle
                 }
 
                 // Check if the newly found device is a new device
-                const bool isNew = deviceRegistry.AddOrUpdateDevice(config.GetDeviceName(), config.GetIp(), config.GetPort());
+                const bool isNew = deviceRegistry.AddOrUpdateDevice(config.GetDeviceName(), config.GetIp(),
+                                                                    config.GetPort());
                 if (isNew)
                 {
                     // If it is a new device then handle device pairing
@@ -74,12 +75,11 @@ namespace MicaListener::MicaListenerService::Lifecycle
                     {
                         continue;
                     }
-                    config = *selectedConfig;
-                }
 
-                ConnectToService(config);
-                // Here the Listener is connected and listening
-                std::clog << logName << "Connection lost or ended." << std::endl;
+                    ConnectToService(*selectedConfig);
+                    // Here the Listener is connected and listening
+                    std::clog << logName << "Connection lost or ended." << std::endl;
+                }
 
                 // Do a little cooldown after a connection ended to avoid connection storms
                 if (!ShutdownHandler::ShouldShutdown())
@@ -112,7 +112,8 @@ namespace MicaListener::MicaListenerService::Lifecycle
             serviceDiscovery.SetOnServiceLost(
                 [&](const std::string &name)
                 {
-                    std::clog << logName << "Connection loss  with " << name << " acknowledged." << std::endl;
+                    std::clog << logName << "Connection loss with " << name << " acknowledged." << std::endl;
+                    deviceRegistry.RemoveDevice(name);
                 });
 
             // Set the Callback when the Service gets resolved
@@ -210,7 +211,6 @@ namespace MicaListener::MicaListenerService::Lifecycle
             if (!doPair)
             {
                 std::clog << logName << "User ignored notification. Skipping connection." << std::endl;
-                deviceRegistry.RemoveDevice(config.GetDeviceName());
                 return std::nullopt;
             }
 
@@ -218,29 +218,35 @@ namespace MicaListener::MicaListenerService::Lifecycle
             const std::string exePath = GetExecutableDir() + "/MicaPairingService";
 
             std::vector<std::string> args = {exePath};
-            for (const auto activeDevices = deviceRegistry.GetActiveDevices(); const auto &dev : activeDevices)
+            for (auto activeDevices = deviceRegistry.GetActiveDevices(); const auto &dev: activeDevices)
             {
                 args.push_back(dev.GetDeviceName() + "," + dev.GetIp() + "," + std::to_string(dev.GetPort()));
             }
 
             std::vector<char *> cArgs;
-            for (auto &a : args) cArgs.push_back(a.data());
+            for (auto &a: args) cArgs.push_back(a.data());
             cArgs.push_back(nullptr);
 
-            struct SyncPairing {
-                std::promise<std::optional<Network::NetworkConfig>> prom;
+            struct SyncPairing
+            {
+                std::promise<std::optional<Network::NetworkConfig> > prom;
                 std::atomic<bool> handled{false};
             };
             auto syncPairing = std::make_shared<SyncPairing>();
 
             socketServer.Start(
-                [syncPairing](const std::string &name, const std::string &ip, uint16_t port) {
-                    if (!syncPairing->handled.exchange(true)) {
-                        syncPairing->prom.set_value(Network::NetworkConfig(ip, port, name, std::chrono::steady_clock::now()));
+                [syncPairing](const std::string &name, const std::string &ip, uint16_t port)
+                {
+                    if (!syncPairing->handled.exchange(true))
+                    {
+                        syncPairing->prom.set_value(
+                            Network::NetworkConfig(ip, port, name, std::chrono::steady_clock::now()));
                     }
                 },
-                [syncPairing]() {
-                    if (!syncPairing->handled.exchange(true)) {
+                [syncPairing]()
+                {
+                    if (!syncPairing->handled.exchange(true))
+                    {
                         syncPairing->prom.set_value(std::nullopt);
                     }
                 }
@@ -249,10 +255,11 @@ namespace MicaListener::MicaListenerService::Lifecycle
             GError *spawnError = nullptr;
             if (!g_spawn_async(nullptr, cArgs.data(), nullptr, G_SPAWN_DEFAULT, nullptr, nullptr, nullptr, &spawnError))
             {
-                std::cerr << logName << "Failed to spawn MicaPairingService: " << (spawnError ? spawnError->message : "unknown") << std::endl;
+                std::cerr << logName << "Failed to spawn MicaPairingService: " << (spawnError
+                    ? spawnError->message
+                    : "unknown") << std::endl;
                 if (spawnError) g_error_free(spawnError);
                 socketServer.Stop();
-                deviceRegistry.RemoveDevice(config.GetDeviceName());
                 return std::nullopt;
             }
 
@@ -264,8 +271,7 @@ namespace MicaListener::MicaListenerService::Lifecycle
             if (future.wait_for(std::chrono::minutes(1)) == std::future_status::ready)
             {
                 selectedConfigOpt = future.get();
-            }
-            else
+            } else
             {
                 std::cerr << logName << "Timed out waiting for pairing decision." << std::endl;
             }
@@ -274,12 +280,11 @@ namespace MicaListener::MicaListenerService::Lifecycle
 
             if (selectedConfigOpt.has_value())
             {
-                std::clog << logName << "Device selected via Unix Socket: " << selectedConfigOpt->GetDeviceName() << std::endl;
-            }
-            else
+                std::clog << logName << "Device selected via Unix Socket: " << selectedConfigOpt->GetDeviceName() <<
+                        std::endl;
+            } else
             {
                 std::clog << logName << "Pairing cancelled or rejected." << std::endl;
-                deviceRegistry.RemoveDevice(config.GetDeviceName());
             }
 
             return selectedConfigOpt;
