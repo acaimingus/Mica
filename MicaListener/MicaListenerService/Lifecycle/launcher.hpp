@@ -65,32 +65,35 @@ namespace MicaListener::MicaListenerService::Lifecycle
                     continue;
                 }
 
-                bool isNew = deviceRegistry.AddOrUpdateDevice(config.GetDeviceName(), config.GetIp(), config.GetPort());
-                bool doPair = false;
+                const bool isNew = deviceRegistry.AddOrUpdateDevice(config.GetDeviceName(), config.GetIp(), config.GetPort());
 
                 if (isNew)
                 {
+                    bool doPair = false;
                     struct SyncData {
                         std::promise<bool> prom;
                         std::atomic<bool> handled{false};
                     };
                     auto syncData = std::make_shared<SyncData>();
-                    auto* userDataAction = new std::shared_ptr<SyncData>(syncData);
                     auto* userDataClosed = new std::shared_ptr<SyncData>(syncData);
 
-                    NotifyNotification *n = notify_notification_new("New Mica Device Found", config.GetDeviceName().c_str(), "dialog-information");
+                    NotifyNotification *n = notify_notification_new("Mica: New devices found", "Click the notification to select the device and confirm pairing", "dialog-information");
                     
-                    notify_notification_add_action(n, "pair", "Pair Device", [](NotifyNotification *, char *, gpointer user_data) {
-                        auto* s = static_cast<std::shared_ptr<SyncData>*>(user_data);
-                        if (!(*s)->handled.exchange(true)) {
+                    auto actionCb = [](NotifyNotification *, char *, gpointer user_data) {
+                        if (const auto* s = static_cast<std::shared_ptr<SyncData>*>(user_data); !(*s)->handled.exchange(true)) {
                             (*s)->prom.set_value(true);
                         }
-                    }, userDataAction, [](gpointer user_data) {
+                    };
+
+                    auto actionFree = [](gpointer user_data) {
                         delete static_cast<std::shared_ptr<SyncData>*>(user_data);
-                    });
+                    };
+
+                    auto* userDataDefault = new std::shared_ptr<SyncData>(syncData);
+                    notify_notification_add_action(n, "default", "Select and pair device", actionCb, userDataDefault, actionFree);
 
                     g_signal_connect_data(n, "closed", G_CALLBACK(+[](NotifyNotification *, gpointer user_data) {
-                        auto* s = static_cast<std::shared_ptr<SyncData>*>(user_data);
+                        const auto* s = static_cast<std::shared_ptr<SyncData>*>(user_data);
                         if (!(*s)->handled.exchange(true)) {
                             (*s)->prom.set_value(false);
                         }
@@ -110,26 +113,30 @@ namespace MicaListener::MicaListenerService::Lifecycle
                     g_object_unref(n);
 
                     if (doPair) {
-                        std::clog << logName << "User selected Pair. Launching MicaPairingService..." << std::endl;
-                        std::string exePath = GetExecutableDir() + "/MicaPairingService";
+                        std::clog << logName << "User selected Pair. Launching MicaPairingService terminal..." << std::endl;
+                        const std::string exePath = GetExecutableDir() + "/MicaPairingService";
                         
-                        std::vector<std::string> args = {exePath};
-                        auto activeDevices = deviceRegistry.GetActiveDevices();
-                        for (const auto& dev : activeDevices) {
-                            args.push_back(dev.GetDeviceName() + "," + dev.GetIp() + "," + std::to_string(dev.GetPort()));
+                        std::vector<std::string> deviceArgs;
+                        for (auto activeDevices = deviceRegistry.GetActiveDevices(); const auto& dev : activeDevices) {
+                            deviceArgs.push_back(dev.GetDeviceName() + "," + dev.GetIp() + "," + std::to_string(dev.GetPort()));
                         }
                         
+                        std::vector<std::string> fullCmd = FindTerminalEmulatorCommand(exePath, deviceArgs);
                         std::vector<char*> cArgs;
-                        for (auto& a : args) cArgs.push_back(a.data());
+                        for (auto& a : fullCmd) cArgs.push_back(a.data());
                         cArgs.push_back(nullptr);
                         
                         GError *spawnError = nullptr;
                         if (!g_spawn_async(nullptr, cArgs.data(), nullptr, G_SPAWN_DEFAULT, nullptr, nullptr, nullptr, &spawnError)) {
-                            std::cerr << logName << "Failed to spawn MicaPairingService: " << spawnError->message << std::endl;
+                            std::cerr << logName << "Failed to spawn MicaPairingService terminal: " << spawnError->message << std::endl;
                             g_error_free(spawnError);
                         }
+
+                        continue;
                     } else {
-                        std::clog << logName << "User ignored notification." << std::endl;
+                        std::clog << logName << "User ignored notification. Skipping connection." << std::endl;
+                        deviceRegistry.RemoveDevice(config.GetDeviceName());
+                        continue;
                     }
                 }
 
@@ -252,6 +259,38 @@ namespace MicaListener::MicaListenerService::Lifecycle
                 return p.parent_path().string();
             }
             return ".";
+        }
+
+        static std::vector<std::string> FindTerminalEmulatorCommand(const std::string& exePath, const std::vector<std::string>& deviceArgs)
+        {
+            const std::vector<std::pair<std::string, std::string>> candidates = {
+                {"/usr/bin/gnome-terminal", "--"},
+                {"/usr/bin/x-terminal-emulator", "-e"},
+                {"/usr/bin/konsole", "-e"},
+                {"/usr/bin/xterm", "-e"},
+                {"/usr/bin/ptyxis", "--"},
+                {"/usr/bin/alacritty", "-e"},
+                {"/usr/bin/kitty", "-e"}
+            };
+
+            for (const auto& [term, flag] : candidates) {
+                if (std::filesystem::exists(term)) {
+                    std::vector<std::string> cmd;
+                    cmd.push_back(term);
+                    cmd.push_back(flag);
+                    cmd.push_back(exePath);
+                    for (const auto& arg : deviceArgs) {
+                        cmd.push_back(arg);
+                    }
+                    return cmd;
+                }
+            }
+
+            std::vector<std::string> fallback = {exePath};
+            for (const auto& arg : deviceArgs) {
+                fallback.push_back(arg);
+            }
+            return fallback;
         }
     };
 }

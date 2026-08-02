@@ -1,5 +1,3 @@
-#pragma once
-
 #include "../Tui/deviceselectiontui.cpp"
 
 namespace MicaPairingService::DeviceSelection
@@ -9,7 +7,9 @@ namespace MicaPairingService::DeviceSelection
     public:
         static void HandleDeviceSelection()
         {
-            Tui::DeviceSelectionTui deviceSelectionTui{};
+            Tui::DeviceSelectionTui deviceSelectionTui;
+
+            std::cout << "Launched the TUI succesfully! yippie!" << std::endl;
             deviceSelectionTui.ShowDeviceSelectionTui();
         }
     };
