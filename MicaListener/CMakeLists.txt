@@ -31,6 +31,7 @@ add_executable(MicaListener MicaListenerService/main.cpp
         MicaListenerService/Network/deviceregistry.cpp
         MicaListenerService/Audio/audioplayer.cpp 
         MicaListenerService/Network/socketclient.cpp
+        MicaListenerService/Notification/notificationmanager.cpp
         MicaListenerService/Lifecycle/launcher.hpp
 )
 

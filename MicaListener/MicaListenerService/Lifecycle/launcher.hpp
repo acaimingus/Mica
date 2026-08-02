@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2026 Adam Martula
+ * Copyright (c) 2026 Adam Martula
  * This source code is licensed under the MIT license found in the LICENSE file in the root of this source tree.
  *
  * Description: Launcher class for setting up the listener service and starting it.
@@ -7,18 +7,14 @@
 #pragma once
 
 #include <chrono>
+#include <climits>
+#include <filesystem>
 #include <iostream>
 #include <string>
 #include <thread>
 #include <unistd.h>
-#include <sys/wait.h>
+#include <vector>
 #include <glib.h>
-#include <libnotify/notify.h>
-#include <future>
-#include <atomic>
-#include <memory>
-#include <filesystem>
-#include <climits>
 
 #include "shutdownhandler.hpp"
 #include "../Network/servicediscovery.hpp"
@@ -26,6 +22,7 @@
 #include "../Audio/audioplayer.hpp"
 #include "../Audio/sinkmanager.hpp"
 #include "../Network/deviceregistry.hpp"
+#include "../Notification/notificationmanager.hpp"
 
 namespace MicaListener::MicaListenerService::Lifecycle
 {
@@ -41,12 +38,7 @@ namespace MicaListener::MicaListenerService::Lifecycle
         {
             std::clog << logName << "MicaListener started..." << std::endl;
 
-            notify_init("MicaListener");
-            GMainLoop *loop = g_main_loop_new(nullptr, FALSE);
-            std::thread glibThread([loop]() {
-                g_main_loop_run(loop);
-            });
-            glibThread.detach();
+            Notification::NotificationManager::Initialize();
 
             // Main loop of the program
             while (!ShutdownHandler::ShouldShutdown())
@@ -69,71 +61,35 @@ namespace MicaListener::MicaListenerService::Lifecycle
 
                 if (isNew)
                 {
-                    bool doPair = false;
-                    struct SyncData {
-                        std::promise<bool> prom;
-                        std::atomic<bool> handled{false};
-                    };
-                    auto syncData = std::make_shared<SyncData>();
-                    auto* userDataClosed = new std::shared_ptr<SyncData>(syncData);
+                    const bool doPair = Notification::NotificationManager::RequestPairingConfirmation(config);
 
-                    NotifyNotification *n = notify_notification_new("Mica: New devices found", "Click the notification to select the device and confirm pairing", "dialog-information");
-                    
-                    auto actionCb = [](NotifyNotification *, char *, gpointer user_data) {
-                        if (const auto* s = static_cast<std::shared_ptr<SyncData>*>(user_data); !(*s)->handled.exchange(true)) {
-                            (*s)->prom.set_value(true);
-                        }
-                    };
-
-                    auto actionFree = [](gpointer user_data) {
-                        delete static_cast<std::shared_ptr<SyncData>*>(user_data);
-                    };
-
-                    auto* userDataDefault = new std::shared_ptr<SyncData>(syncData);
-                    notify_notification_add_action(n, "default", "Select and pair device", actionCb, userDataDefault, actionFree);
-
-                    g_signal_connect_data(n, "closed", G_CALLBACK(+[](NotifyNotification *, gpointer user_data) {
-                        const auto* s = static_cast<std::shared_ptr<SyncData>*>(user_data);
-                        if (!(*s)->handled.exchange(true)) {
-                            (*s)->prom.set_value(false);
-                        }
-                    }), userDataClosed, [](gpointer user_data, GClosure*) {
-                        delete static_cast<std::shared_ptr<SyncData>*>(user_data);
-                    }, static_cast<GConnectFlags>(0));
-
-                    GError *error = nullptr;
-                    if (notify_notification_show(n, &error)) {
-                        std::clog << logName << "Waiting for user decision on notification..." << std::endl;
-                        doPair = syncData->prom.get_future().get();
-                    } else {
-                        std::cerr << logName << "Failed to show notification: " << error->message << std::endl;
-                        g_error_free(error);
-                    }
-
-                    g_object_unref(n);
-
-                    if (doPair) {
+                    if (doPair)
+                    {
                         std::clog << logName << "User selected Pair. Launching MicaPairingService terminal..." << std::endl;
                         const std::string exePath = GetExecutableDir() + "/MicaPairingService";
-                        
+
                         std::vector<std::string> deviceArgs;
-                        for (auto activeDevices = deviceRegistry.GetActiveDevices(); const auto& dev : activeDevices) {
+                        for (auto activeDevices = deviceRegistry.GetActiveDevices(); const auto &dev : activeDevices)
+                        {
                             deviceArgs.push_back(dev.GetDeviceName() + "," + dev.GetIp() + "," + std::to_string(dev.GetPort()));
                         }
-                        
+
                         std::vector<std::string> fullCmd = FindTerminalEmulatorCommand(exePath, deviceArgs);
-                        std::vector<char*> cArgs;
-                        for (auto& a : fullCmd) cArgs.push_back(a.data());
+                        std::vector<char *> cArgs;
+                        for (auto &a : fullCmd) cArgs.push_back(a.data());
                         cArgs.push_back(nullptr);
-                        
+
                         GError *spawnError = nullptr;
-                        if (!g_spawn_async(nullptr, cArgs.data(), nullptr, G_SPAWN_DEFAULT, nullptr, nullptr, nullptr, &spawnError)) {
-                            std::cerr << logName << "Failed to spawn MicaPairingService terminal: " << spawnError->message << std::endl;
-                            g_error_free(spawnError);
+                        if (!g_spawn_async(nullptr, cArgs.data(), nullptr, G_SPAWN_DEFAULT, nullptr, nullptr, nullptr, &spawnError))
+                        {
+                            std::cerr << logName << "Failed to spawn MicaPairingService terminal: " << (spawnError ? spawnError->message : "unknown") << std::endl;
+                            if (spawnError) g_error_free(spawnError);
                         }
 
                         continue;
-                    } else {
+                    }
+                    else
+                    {
                         std::clog << logName << "User ignored notification. Skipping connection." << std::endl;
                         deviceRegistry.RemoveDevice(config.GetDeviceName());
                         continue;
@@ -251,17 +207,19 @@ namespace MicaListener::MicaListenerService::Lifecycle
             }
         }
 
-        static std::string GetExecutableDir() {
+        static std::string GetExecutableDir()
+        {
             char result[PATH_MAX];
             ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
-            if (count != -1) {
+            if (count != -1)
+            {
                 std::filesystem::path p(std::string(result, count));
                 return p.parent_path().string();
             }
             return ".";
         }
 
-        static std::vector<std::string> FindTerminalEmulatorCommand(const std::string& exePath, const std::vector<std::string>& deviceArgs)
+        static std::vector<std::string> FindTerminalEmulatorCommand(const std::string &exePath, const std::vector<std::string> &deviceArgs)
         {
             const std::vector<std::pair<std::string, std::string>> candidates = {
                 {"/usr/bin/gnome-terminal", "--"},
@@ -273,13 +231,16 @@ namespace MicaListener::MicaListenerService::Lifecycle
                 {"/usr/bin/kitty", "-e"}
             };
 
-            for (const auto& [term, flag] : candidates) {
-                if (std::filesystem::exists(term)) {
+            for (const auto &[term, flag] : candidates)
+            {
+                if (std::filesystem::exists(term))
+                {
                     std::vector<std::string> cmd;
                     cmd.push_back(term);
                     cmd.push_back(flag);
                     cmd.push_back(exePath);
-                    for (const auto& arg : deviceArgs) {
+                    for (const auto &arg : deviceArgs)
+                    {
                         cmd.push_back(arg);
                     }
                     return cmd;
@@ -287,7 +248,8 @@ namespace MicaListener::MicaListenerService::Lifecycle
             }
 
             std::vector<std::string> fallback = {exePath};
-            for (const auto& arg : deviceArgs) {
+            for (const auto &arg : deviceArgs)
+            {
                 fallback.push_back(arg);
             }
             return fallback;
