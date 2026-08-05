@@ -3,7 +3,7 @@
 #include <iostream>
 #include <ostream>
 
-#include "../Network/unixsocketclient.hpp"
+#include "../Network/pairingsocketclient.hpp"
 
 namespace MicaPairingService::Tui
 {
@@ -18,11 +18,11 @@ namespace MicaPairingService::Tui
 
             if (userChoice == "y" || userChoice == "Y")
             {
-                Network::UnixSocketClient::SendPairingConfirmation("debug", "127.0.0.1", 42000);
+                Network::PairingSocketClient::SendPairingConfirmation("debug", "127.0.0.1", 42000);
             }
             else
             {
-                Network::UnixSocketClient::SendPairingCancellation();
+                Network::PairingSocketClient::SendPairingCancellation();
             }
         }
     private:

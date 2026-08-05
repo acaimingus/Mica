@@ -16,7 +16,7 @@
 
 namespace MicaPairingService::Network
 {
-    class UnixSocketClient
+    class PairingSocketClient
     {
     public:
         static constexpr auto socketPath = "/tmp/mica_pairing.sock";

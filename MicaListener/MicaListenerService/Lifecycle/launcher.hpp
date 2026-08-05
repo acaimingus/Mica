@@ -26,7 +26,7 @@
 #include "../Audio/audioplayer.hpp"
 #include "../Audio/sinkmanager.hpp"
 #include "../Network/deviceregistry.hpp"
-#include "../Network/Sockets/dbussocketserver.hpp"
+#include "../Network/Sockets/pairingsocketserver.hpp"
 #include "../Notification/notificationmanager.hpp"
 
 namespace MicaListener::MicaListenerService::Lifecycle
@@ -36,7 +36,7 @@ namespace MicaListener::MicaListenerService::Lifecycle
     {
     public:
         inline static Network::DeviceRegistry deviceRegistry;
-        inline static Network::Sockets::DbusSocketServer socketServer;
+        inline static Network::Sockets::PairingSocketServer socketServer;
 
         /// @brief Runs the main program loop: repeatedly discovers the Mica service and
         ///        streams audio until a shutdown is requested

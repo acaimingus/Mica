@@ -20,7 +20,7 @@
 
 namespace MicaListener::MicaListenerService::Network::Sockets
 {
-    class DbusSocketServer
+    class PairingSocketServer
     {
     public:
         using ConfirmCallback = std::function<void(const std::string &name, const std::string &ip, uint16_t port)>;
@@ -28,8 +28,8 @@ namespace MicaListener::MicaListenerService::Network::Sockets
 
         static constexpr const char* socketPath = "/tmp/mica_pairing.sock";
 
-        DbusSocketServer() = default;
-        ~DbusSocketServer() { Stop(); }
+        PairingSocketServer() = default;
+        ~PairingSocketServer() { Stop(); }
 
         bool Start(ConfirmCallback onConfirm, CancelCallback onCancel)
         {
