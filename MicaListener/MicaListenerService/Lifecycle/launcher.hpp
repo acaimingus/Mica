@@ -7,27 +7,20 @@
 #pragma once
 
 #include <chrono>
-#include <climits>
-#include <filesystem>
-#include <future>
-#include <atomic>
-#include <memory>
-#include <optional>
+#include <cstdint>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <thread>
-#include <unistd.h>
 #include <vector>
-#include <glib.h>
 
 #include "shutdownhandler.hpp"
-#include "../Network/servicediscovery.hpp"
-#include "../Network/Sockets/androidsocketclient.hpp"
 #include "../Audio/audioplayer.hpp"
 #include "../Audio/sinkmanager.hpp"
 #include "../Network/deviceregistry.hpp"
-#include "../Network/Sockets/pairingsocketserver.hpp"
-#include "../Notification/notificationmanager.hpp"
+#include "../Network/servicediscovery.hpp"
+#include "../Network/Sockets/androidsocketclient.hpp"
+#include "../Pairing/pairingmanager.hpp"
 
 namespace MicaListener::MicaListenerService::Lifecycle
 {
@@ -36,7 +29,6 @@ namespace MicaListener::MicaListenerService::Lifecycle
     {
     public:
         inline static Network::DeviceRegistry deviceRegistry;
-        inline static Network::Sockets::PairingSocketServer socketServer;
 
         /// @brief Runs the main program loop: repeatedly discovers the Mica service and
         ///        streams audio until a shutdown is requested
@@ -44,7 +36,7 @@ namespace MicaListener::MicaListenerService::Lifecycle
         {
             std::clog << logName << "MicaListener started..." << std::endl;
 
-            Notification::NotificationManager::Initialize();
+            Pairing::PairingManager::Initialize();
 
             // Main loop of the program
             while (!ShutdownHandler::ShouldShutdown())
@@ -69,7 +61,7 @@ namespace MicaListener::MicaListenerService::Lifecycle
                 if (isNew)
                 {
                     // If it is a new device then handle device pairing
-                    const auto selectedConfig = HandleDevicePairing(config);
+                    const auto selectedConfig = Pairing::PairingManager::HandleDevicePairing(config, deviceRegistry);
 
                     if (!selectedConfig.has_value())
                     {
@@ -187,107 +179,6 @@ namespace MicaListener::MicaListenerService::Lifecycle
             {
                 std::cerr << logName << "Connection error: " << error.what() << std::endl;
             }
-        }
-
-        static std::string GetExecutableDir()
-        {
-            char result[PATH_MAX];
-            ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
-            if (count != -1)
-            {
-                std::filesystem::path p(std::string(result, count));
-                return p.parent_path().string();
-            }
-            return ".";
-        }
-
-        /// @brief Handles desktop notification and IPC pairing confirmation for a newly discovered device
-        /// @param config The network configuration of the newly discovered service
-        /// @return std::optional<Network::NetworkConfig> containing the user-selected device config, or std::nullopt if ignored/cancelled
-        static std::optional<Network::NetworkConfig> HandleDevicePairing(const Network::NetworkConfig &config)
-        {
-            const bool doPair = Notification::NotificationManager::RequestPairingConfirmation(config);
-
-            if (!doPair)
-            {
-                std::clog << logName << "User ignored notification. Skipping connection." << std::endl;
-                return std::nullopt;
-            }
-
-            std::clog << logName << "User selected Pair. Executing MicaPairingService..." << std::endl;
-            const std::string exePath = GetExecutableDir() + "/MicaPairingService";
-
-            std::vector<std::string> args = {exePath};
-            for (auto activeDevices = deviceRegistry.GetActiveDevices(); const auto &dev: activeDevices)
-            {
-                args.push_back(dev.GetDeviceName() + "," + dev.GetIp() + "," + std::to_string(dev.GetPort()));
-            }
-
-            std::vector<char *> cArgs;
-            for (auto &a: args) cArgs.push_back(a.data());
-            cArgs.push_back(nullptr);
-
-            struct SyncPairing
-            {
-                std::promise<std::optional<Network::NetworkConfig> > prom;
-                std::atomic<bool> handled{false};
-            };
-            auto syncPairing = std::make_shared<SyncPairing>();
-
-            socketServer.Start(
-                [syncPairing](const std::string &name, const std::string &ip, uint16_t port)
-                {
-                    if (!syncPairing->handled.exchange(true))
-                    {
-                        syncPairing->prom.set_value(
-                            Network::NetworkConfig(ip, port, name, std::chrono::steady_clock::now()));
-                    }
-                },
-                [syncPairing]()
-                {
-                    if (!syncPairing->handled.exchange(true))
-                    {
-                        syncPairing->prom.set_value(std::nullopt);
-                    }
-                }
-            );
-
-            GError *spawnError = nullptr;
-            if (!g_spawn_async(nullptr, cArgs.data(), nullptr, G_SPAWN_DEFAULT, nullptr, nullptr, nullptr, &spawnError))
-            {
-                std::cerr << logName << "Failed to spawn MicaPairingService: " << (spawnError
-                    ? spawnError->message
-                    : "unknown") << std::endl;
-                if (spawnError) g_error_free(spawnError);
-                socketServer.Stop();
-                return std::nullopt;
-            }
-
-            std::clog << logName << "Waiting for pairing decision from TUI via Unix Socket..." << std::endl;
-
-            auto future = syncPairing->prom.get_future();
-            std::optional<Network::NetworkConfig> selectedConfigOpt = std::nullopt;
-
-            if (future.wait_for(std::chrono::minutes(1)) == std::future_status::ready)
-            {
-                selectedConfigOpt = future.get();
-            } else
-            {
-                std::cerr << logName << "Timed out waiting for pairing decision." << std::endl;
-            }
-
-            socketServer.Stop();
-
-            if (selectedConfigOpt.has_value())
-            {
-                std::clog << logName << "Device selected via Unix Socket: " << selectedConfigOpt->GetDeviceName() <<
-                        std::endl;
-            } else
-            {
-                std::clog << logName << "Pairing cancelled or rejected." << std::endl;
-            }
-
-            return selectedConfigOpt;
         }
     };
 }
