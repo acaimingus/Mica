@@ -29,8 +29,8 @@ pkg_search_module(LIBNOTIFY REQUIRED libnotify)
 add_executable(MicaListener MicaListenerService/main.cpp
         MicaListenerService/Network/servicediscovery.cpp 
         MicaListenerService/Network/deviceregistry.cpp
-        MicaListenerService/Audio/audioplayer.cpp 
-        MicaListenerService/Network/socketclient.cpp
+        MicaListenerService/Audio/audioplayer.cpp
+        MicaListenerService/Network/androidsocketclient.cpp
         MicaListenerService/Notification/notificationmanager.cpp
         MicaListenerService/Lifecycle/launcher.hpp
 )

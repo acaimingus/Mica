@@ -5,11 +5,11 @@
  * Description: Class for managing socket connections.
  */
 
-#include "socketclient.hpp"
+#include "androidsocketclient.hpp"
 
 namespace MicaListener::MicaListenerService::Network
 {
-    SocketClient::SocketClient(const NetworkConfig &_config)
+    AndroidSocketClient::AndroidSocketClient(const NetworkConfig &_config)
     {
         // Create the socket by type
         // AF_INET = IPv4, SOCK_STREAM = TCP, 0 = IP
@@ -51,7 +51,7 @@ namespace MicaListener::MicaListenerService::Network
         std::clog << logName << "Connected!" << std::endl;
     }
 
-    SocketClient::~SocketClient()
+    AndroidSocketClient::~AndroidSocketClient()
     {
         // Close the socket if it wasn't already
         if (sock != -1)
@@ -61,7 +61,7 @@ namespace MicaListener::MicaListenerService::Network
         }
     }
 
-    ssize_t SocketClient::Read(std::vector<uint8_t> &_buffer) const
+    ssize_t AndroidSocketClient::Read(std::vector<uint8_t> &_buffer) const
     {
         // Try reading data from the socket
         const ssize_t bytesRead = recv(sock, _buffer.data(), _buffer.size(), 0);

@@ -22,7 +22,7 @@
 
 #include "shutdownhandler.hpp"
 #include "../Network/servicediscovery.hpp"
-#include "../Network/socketclient.hpp"
+#include "../Network/androidsocketclient.hpp"
 #include "../Audio/audioplayer.hpp"
 #include "../Audio/sinkmanager.hpp"
 #include "../Network/deviceregistry.hpp"
@@ -154,7 +154,7 @@ namespace MicaListener::MicaListenerService::Lifecycle
                 audioPlayer.Initialize("Mica");
                 std::clog << logName << "Audio player is set up!" << std::endl;
 
-                const Network::SocketClient socketClient(_config);
+                const Network::AndroidSocketClient socketClient(_config);
                 constexpr int bufferSize = 4096 * 2;
                 std::vector<uint8_t> buffer(bufferSize);
 

@@ -19,14 +19,14 @@
 
 namespace MicaListener::MicaListenerService::Network
 {
-    class SocketClient
+    class AndroidSocketClient
     {
     public:
         /// @brief Constructor of the SocketClient class, takes a NetworkConfig struct and creates a socket based on it
-        explicit SocketClient(const NetworkConfig &_config);
+        explicit AndroidSocketClient(const NetworkConfig &_config);
 
         /// @brief Destructor for the SocketClient class
-        ~SocketClient();
+        ~AndroidSocketClient();
 
         /// @brief Method for reading data from the socket
         ssize_t Read(std::vector<uint8_t> &_buffer) const;
