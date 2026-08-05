@@ -15,9 +15,9 @@
 #include <cstring>
 #include <vector>
 
-#include "networkconfig.hpp"
+#include "../networkconfig.hpp"
 
-namespace MicaListener::MicaListenerService::Network
+namespace MicaListener::MicaListenerService::Network::Sockets
 {
     class AndroidSocketClient
     {

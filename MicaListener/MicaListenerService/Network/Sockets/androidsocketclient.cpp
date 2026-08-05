@@ -7,7 +7,7 @@
 
 #include "androidsocketclient.hpp"
 
-namespace MicaListener::MicaListenerService::Network
+namespace MicaListener::MicaListenerService::Network::Sockets
 {
     AndroidSocketClient::AndroidSocketClient(const NetworkConfig &_config)
     {

@@ -22,11 +22,11 @@
 
 #include "shutdownhandler.hpp"
 #include "../Network/servicediscovery.hpp"
-#include "../Network/androidsocketclient.hpp"
+#include "../Network/Sockets/androidsocketclient.hpp"
 #include "../Audio/audioplayer.hpp"
 #include "../Audio/sinkmanager.hpp"
 #include "../Network/deviceregistry.hpp"
-#include "../Network/unixsocketserver.hpp"
+#include "../Network/Sockets/dbussocketserver.hpp"
 #include "../Notification/notificationmanager.hpp"
 
 namespace MicaListener::MicaListenerService::Lifecycle
@@ -36,7 +36,7 @@ namespace MicaListener::MicaListenerService::Lifecycle
     {
     public:
         inline static Network::DeviceRegistry deviceRegistry;
-        inline static Network::UnixSocketServer socketServer;
+        inline static Network::Sockets::DbusSocketServer socketServer;
 
         /// @brief Runs the main program loop: repeatedly discovers the Mica service and
         ///        streams audio until a shutdown is requested
@@ -154,7 +154,7 @@ namespace MicaListener::MicaListenerService::Lifecycle
                 audioPlayer.Initialize("Mica");
                 std::clog << logName << "Audio player is set up!" << std::endl;
 
-                const Network::AndroidSocketClient socketClient(_config);
+                const Network::Sockets::AndroidSocketClient socketClient(_config);
                 constexpr int bufferSize = 4096 * 2;
                 std::vector<uint8_t> buffer(bufferSize);
 

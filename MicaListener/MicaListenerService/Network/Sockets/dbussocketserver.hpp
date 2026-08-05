@@ -18,9 +18,9 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-namespace MicaListener::MicaListenerService::Network
+namespace MicaListener::MicaListenerService::Network::Sockets
 {
-    class UnixSocketServer
+    class DbusSocketServer
     {
     public:
         using ConfirmCallback = std::function<void(const std::string &name, const std::string &ip, uint16_t port)>;
@@ -28,8 +28,8 @@ namespace MicaListener::MicaListenerService::Network
 
         static constexpr const char* socketPath = "/tmp/mica_pairing.sock";
 
-        UnixSocketServer() = default;
-        ~UnixSocketServer() { Stop(); }
+        DbusSocketServer() = default;
+        ~DbusSocketServer() { Stop(); }
 
         bool Start(ConfirmCallback onConfirm, CancelCallback onCancel)
         {
