@@ -1,6 +1,7 @@
 #include <vector>
 
 #include "../Network/receiveddevice.hpp"
+#include "../Network/pairingsocketclient.hpp"
 #include "../Tui/pairingconfirmationtui.cpp"
 #include "../Tui/deviceselectiontui.cpp"
 #include "../Terminal/terminallauncher.hpp"
@@ -23,7 +24,12 @@ namespace MicaPairingService::Lifecycle
 
             const std::vector<Network::ReceivedDevice> devices = ParseCommandLineArgs(argc, argv);
 
-            // TODO: Handle no devices
+            if (devices.empty())
+            {
+                std::cout << "No active devices available for pairing." << std::endl;
+                Network::PairingSocketClient::SendPairingCancellation();
+                return;
+            }
 
             if (devices.size() > 1)
             {
