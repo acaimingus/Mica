@@ -37,8 +37,7 @@ namespace MicaPairingService::Tui
             if (choice != -1)
             {
                 // Open the pairing screen for the selected device
-                PairingConfirmationTui pairingConfirmationTui;
-                pairingConfirmationTui.ShowPairingConfirmationTui(devices[choice - 1]);
+                PairingConfirmationTui::ShowPairingConfirmationTui(devices[choice - 1]);
             }
         }
 
