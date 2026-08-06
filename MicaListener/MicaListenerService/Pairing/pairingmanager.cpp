@@ -128,8 +128,8 @@ namespace MicaListener::MicaListenerService::Pairing
             return std::nullopt;
         }
 
-        std::clog << logName << "User selected Pair. Executing MicaPairingService..." << std::endl;
-        const std::string exePath = GetExecutableDir() + "/MicaPairingService";
+        std::clog << logName << "User selected Pair. Executing MicaPairing..." << std::endl;
+        const std::string exePath = GetExecutableDir() + "/MicaPairing";
 
         std::vector<std::string> args = {exePath};
         for (const auto activeDevices = deviceRegistry.GetActiveDevices(); const auto &dev: activeDevices)
@@ -171,7 +171,7 @@ namespace MicaListener::MicaListenerService::Pairing
         GError *spawnError = nullptr;
         if (!g_spawn_async(nullptr, cArgs.data(), nullptr, G_SPAWN_DEFAULT, nullptr, nullptr, nullptr, &spawnError))
         {
-            std::cerr << logName << "Failed to spawn MicaPairingService: " << (spawnError
+            std::cerr << logName << "Failed to spawn MicaPairing: " << (spawnError
                                                                                    ? spawnError->message
                                                                                    : "unknown") << std::endl;
             if (spawnError) g_error_free(spawnError);

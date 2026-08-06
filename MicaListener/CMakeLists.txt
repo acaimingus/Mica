@@ -35,7 +35,7 @@ add_executable(MicaListener MicaListenerService/main.cpp
         MicaListenerService/Lifecycle/launcher.hpp
 )
 
-add_executable(MicaPairingService
+add_executable(MicaPairing
         MicaPairingService/main.cpp
         MicaPairingService/Lifecycle/launcher.cpp
         MicaPairingService/Network/receiveddevice.hpp
