@@ -21,21 +21,19 @@ namespace MicaPairingService::Lifecycle
 
             std::cout << "=== MicaPairingService TUI ===" << std::endl;
 
-            std::vector<Network::ReceivedDevice> devices = ParseCommandLineArgs(argc, argv);
+            const std::vector<Network::ReceivedDevice> devices = ParseCommandLineArgs(argc, argv);
 
             // TODO: Handle no devices
 
             if (devices.size() > 1)
             {
                 // There's more than one device asking to pair, open selection
-                Tui::DeviceSelectionTui deviceSelectionTui;
-                deviceSelectionTui.ShowDeviceSelectionTui(devices);
+                Tui::DeviceSelectionTui::ShowDeviceSelectionTui(devices);
             }
             else
             {
-                Tui::PairingConfirmationTui pairingConfirmationTui;
                 // There's only one device, open pairing confirmation
-                pairingConfirmationTui.ShowPairingConfirmationTui(devices.front());
+                Tui::PairingConfirmationTui::ShowPairingConfirmationTui(devices.front());
             }
         }
 
