@@ -37,7 +37,8 @@ add_executable(MicaListener MicaListenerService/main.cpp
 
 add_executable(MicaPairingService
         MicaPairingService/main.cpp
-        MicaPairingService/DeviceSelection/deviceselectionhandler.cpp
+        MicaPairingService/Lifecycle/launcher.cpp
+        MicaPairingService/Network/receiveddevice.hpp
 )
 
 # Set O2 optimization for the release

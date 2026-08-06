@@ -24,7 +24,7 @@ namespace MicaPairingService::Network
         /// @brief Sends a confirmed device choice to MicaListener via Unix Domain Socket
         static bool SendPairingConfirmation(const std::string &name, const std::string &ip, uint16_t port)
         {
-            const std::string message = "PAIR " + name + " " + ip + " " + std::to_string(port) + "\n";
+            const std::string message = "PAIR\n" + name + "\n" + ip + "\n" + std::to_string(port) + "\n";
             return SendMessage(message);
         }
 

@@ -132,9 +132,11 @@ namespace MicaListener::MicaListenerService::Pairing
         const std::string exePath = GetExecutableDir() + "/MicaPairingService";
 
         std::vector<std::string> args = {exePath};
-        for (auto activeDevices = deviceRegistry.GetActiveDevices(); const auto &dev: activeDevices)
+        for (const auto activeDevices = deviceRegistry.GetActiveDevices(); const auto &dev: activeDevices)
         {
-            args.push_back(dev.GetDeviceName() + "," + dev.GetIp() + "," + std::to_string(dev.GetPort()));
+            args.push_back(dev.GetDeviceName());
+            args.push_back(dev.GetIp());
+            args.push_back(std::to_string(dev.GetPort()));
         }
 
         std::vector<char *> cArgs;

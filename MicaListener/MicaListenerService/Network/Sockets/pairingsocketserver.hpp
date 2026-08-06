@@ -74,13 +74,29 @@ namespace MicaListener::MicaListenerService::Network::Sockets
 
         void Stop()
         {
-            isRunning = false;
+            if (!isRunning.exchange(false))
+            {
+                return;
+            }
+
             if (serverFd >= 0)
             {
                 shutdown(serverFd, SHUT_RDWR);
                 close(serverFd);
                 serverFd = -1;
             }
+
+            // Connect a dummy client to unblock any pending accept() in serverThread
+            int dummyFd = socket(AF_UNIX, SOCK_STREAM, 0);
+            if (dummyFd >= 0)
+            {
+                sockaddr_un addr{};
+                addr.sun_family = AF_UNIX;
+                strncpy(addr.sun_path, socketPath, sizeof(addr.sun_path) - 1);
+                connect(dummyFd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
+                close(dummyFd);
+            }
+
             if (serverThread.joinable())
             {
                 serverThread.join();
@@ -96,6 +112,14 @@ namespace MicaListener::MicaListenerService::Network::Sockets
         std::thread serverThread;
         ConfirmCallback confirmCb;
         CancelCallback cancelCb;
+
+        static void TrimWhitespace(std::string &s)
+        {
+            while (!s.empty() && (s.back() == '\r' || s.back() == '\n' || s.back() == ' '))
+            {
+                s.pop_back();
+            }
+        }
 
         void ListenLoop()
         {
@@ -115,28 +139,35 @@ namespace MicaListener::MicaListenerService::Network::Sockets
                 if (bytesRead > 0)
                 {
                     buffer[bytesRead] = '\0';
-                    std::string line(buffer);
-                    std::stringstream ss(line);
-                    std::string command;
-                    ss >> command;
+                    std::stringstream ss(buffer);
+                    if (std::string command; std::getline(ss, command))
+                    {
+                        TrimWhitespace(command);
 
-                    if (command == "PAIR")
-                    {
-                        std::string devName, ip;
-                        uint16_t port = 0;
-                        ss >> devName >> ip >> port;
-                        std::clog << logName << "Received PAIR command: " << devName << " (" << ip << ":" << port << ")" << std::endl;
-                        if (confirmCb)
+                        if (command == "PAIR")
                         {
-                            confirmCb(devName, ip, port);
+                            std::string devName, ip, portStr;
+                            if (std::getline(ss, devName) && std::getline(ss, ip) && std::getline(ss, portStr))
+                            {
+                                TrimWhitespace(devName);
+                                TrimWhitespace(ip);
+                                TrimWhitespace(portStr);
+                                const auto port = static_cast<uint16_t>(std::stoi(portStr));
+
+                                std::clog << logName << "Received PAIR command: " << devName << " (" << ip << ":" << port << ")" << std::endl;
+                                if (confirmCb)
+                                {
+                                    confirmCb(devName, ip, port);
+                                }
+                            }
                         }
-                    }
-                    else if (command == "CANCEL")
-                    {
-                        std::clog << logName << "Received CANCEL command." << std::endl;
-                        if (cancelCb)
+                        else if (command == "CANCEL")
                         {
-                            cancelCb();
+                            std::clog << logName << "Received CANCEL command." << std::endl;
+                            if (cancelCb)
+                            {
+                                cancelCb();
+                            }
                         }
                     }
                 }
