@@ -21,6 +21,7 @@
 #include <libnotify/notify.h>
 
 #include "pairingmanager.hpp"
+#include "../Lifecycle/shutdownhandler.hpp"
 #include "../Network/Sockets/pairingsocketserver.hpp"
 
 namespace MicaListener::MicaListenerService::Pairing
@@ -88,7 +89,23 @@ namespace MicaListener::MicaListenerService::Pairing
         {
             std::clog << logName << "Waiting for user decision on notification for '" << config.GetDeviceName() <<
                     "'..." << std::endl;
-            userAccepted = syncData->prom.get_future().get();
+
+            auto fut = syncData->prom.get_future();
+            while (!Lifecycle::ShutdownHandler::ShouldShutdown())
+            {
+                if (fut.wait_for(std::chrono::milliseconds(200)) == std::future_status::ready)
+                {
+                    userAccepted = fut.get();
+                    break;
+                }
+            }
+
+            if (Lifecycle::ShutdownHandler::ShouldShutdown())
+            {
+                std::clog << logName << "Shutdown requested, closing desktop notification..." << std::endl;
+                notify_notification_close(n, nullptr);
+                userAccepted = false;
+            }
         } else
         {
             std::cerr << logName << "Failed to show notification: " << (error ? error->message : "unknown") <<
@@ -200,12 +217,13 @@ namespace MicaListener::MicaListenerService::Pairing
         auto future = syncPairing->prom.get_future();
         std::optional<Network::NetworkConfig> selectedConfigOpt = std::nullopt;
 
-        if (future.wait_for(std::chrono::minutes(1)) == std::future_status::ready)
+        while (!Lifecycle::ShutdownHandler::ShouldShutdown())
         {
-            selectedConfigOpt = future.get();
-        } else
-        {
-            std::cerr << logName << "Timed out waiting for pairing decision." << std::endl;
+            if (future.wait_for(std::chrono::milliseconds(200)) == std::future_status::ready)
+            {
+                selectedConfigOpt = future.get();
+                break;
+            }
         }
 
         pairingSocketServer.Stop();
