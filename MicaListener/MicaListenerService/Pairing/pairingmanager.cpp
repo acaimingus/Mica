@@ -16,6 +16,7 @@
 #include <thread>
 #include <unistd.h>
 #include <vector>
+#include <sys/wait.h>
 #include <glib.h>
 #include <libnotify/notify.h>
 
@@ -168,8 +169,9 @@ namespace MicaListener::MicaListenerService::Pairing
             }
         );
 
+        GPid childPid = 0;
         GError *spawnError = nullptr;
-        if (!g_spawn_async(nullptr, cArgs.data(), nullptr, G_SPAWN_DEFAULT, nullptr, nullptr, nullptr, &spawnError))
+        if (!g_spawn_async(nullptr, cArgs.data(), nullptr, G_SPAWN_DO_NOT_REAP_CHILD, nullptr, nullptr, &childPid, &spawnError))
         {
             std::cerr << logName << "Failed to spawn MicaPairing: " << (spawnError
                                                                                    ? spawnError->message
@@ -178,6 +180,20 @@ namespace MicaListener::MicaListenerService::Pairing
             pairingSocketServer.Stop();
             return std::nullopt;
         }
+
+        // Monitor child process exit to immediately unblock if closed or killed
+        std::thread childMonitor([childPid, syncPairing]()
+        {
+            int status = 0;
+            waitpid(childPid, &status, 0);
+            g_spawn_close_pid(childPid);
+
+            if (!syncPairing->handled.exchange(true))
+            {
+                syncPairing->prom.set_value(std::nullopt);
+            }
+        });
+        childMonitor.detach();
 
         std::clog << logName << "Waiting for pairing decision from TUI via Unix Socket..." << std::endl;
 

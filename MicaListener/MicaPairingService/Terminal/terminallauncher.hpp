@@ -37,44 +37,46 @@ namespace MicaPairingService::Terminal
                 deviceArgs.emplace_back(argv[i]);
             }
 
-            const std::vector<std::pair<std::string, std::string>> candidates = {
-                {"/usr/bin/gnome-terminal", "--"},
-                {"/usr/bin/x-terminal-emulator", "-e"},
-                {"/usr/bin/konsole", "-e"},
-                {"/usr/bin/xterm", "-e"},
-                {"/usr/bin/ptyxis", "--"},
-                {"/usr/bin/alacritty", "-e"},
-                {"/usr/bin/kitty", "-e"}
+            struct TermCandidate
+            {
+                std::string path;
+                std::vector<std::string> flags;
             };
 
-            for (const auto &[term, flag] : candidates)
+            const std::vector<TermCandidate> candidates = {
+                {"/usr/bin/gnome-terminal", {"--wait", "--"}},
+                {"/usr/bin/ptyxis", {"--wait", "--"}},
+                {"/usr/bin/konsole", {"--nofork", "-e"}},
+                {"/usr/bin/x-terminal-emulator", {"-e"}},
+                {"/usr/bin/xterm", {"-e"}},
+                {"/usr/bin/alacritty", {"-e"}},
+                {"/usr/bin/kitty", {"-e"}}
+            };
+
+            for (const auto &cand : candidates)
             {
-                if (std::filesystem::exists(term))
+                if (std::filesystem::exists(cand.path))
                 {
-                    pid_t pid = fork();
-                    if (pid == 0)
+                    std::vector<std::string> cmdStrings = {cand.path};
+                    for (const auto &f : cand.flags)
                     {
-                        std::vector<std::string> cmdStrings = {term, flag, exePath};
-                        for (const auto &arg : deviceArgs)
-                        {
-                            cmdStrings.push_back(arg);
-                        }
-
-                        std::vector<char *> cArgs;
-                        for (auto &s : cmdStrings)
-                        {
-                            cArgs.push_back(s.data());
-                        }
-                        cArgs.push_back(nullptr);
-
-                        execv(term.c_str(), cArgs.data());
-                        _exit(1);
+                        cmdStrings.push_back(f);
                     }
-                    else if (pid > 0)
+                    cmdStrings.push_back(exePath);
+                    for (const auto &arg : deviceArgs)
                     {
-                        // Background parent process exits immediately after spawning the terminal window
-                        exit(0);
+                        cmdStrings.push_back(arg);
                     }
+
+                    std::vector<char *> cArgs;
+                    for (auto &s : cmdStrings)
+                    {
+                        cArgs.push_back(s.data());
+                    }
+                    cArgs.push_back(nullptr);
+
+                    // Directly replace the current process image so MicaListener's waitpid stays bound to this window
+                    execv(cand.path.c_str(), cArgs.data());
                 }
             }
         }
