@@ -36,50 +36,56 @@ namespace MicaListener::MicaListenerService::Lifecycle
 
             Pairing::PairingManager::Initialize();
 
+            std::clog << logName << "Creating the Service Discovery for '" << serviceName << "'..." << std::endl;
+            Network::ServiceDiscovery serviceDiscovery(serviceName, deviceRegistry);
+
+            std::atomic<bool> initialBatchDone{false};
+            serviceDiscovery.SetOnBatchComplete(
+                [&]()
+                {
+                    std::clog << logName << "Avahi initial batch scan completed." << std::endl;
+                    initialBatchDone = true;
+                });
+
+            std::clog << logName << "Starting background service discovery..." << std::endl;
+            serviceDiscovery.Start();
+
+            // Wait for initial Avahi batch or shutdown
+            while (!ShutdownHandler::ShouldShutdown() && !initialBatchDone)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            }
+
             // Main loop of the program
             while (!ShutdownHandler::ShouldShutdown())
             {
-                std::clog << logName << "Creating the Service Discovery for '" << serviceName << "'..." << std::endl;
-                Network::ServiceDiscovery serviceDiscovery(serviceName, deviceRegistry);
-                std::clog << logName << "Listening for services..." << std::endl;
-                Network::NetworkConfig config = serviceDiscovery.ListenForService();
-
-                // If the app should shut down, then break the main loop
-                if (ShutdownHandler::ShouldShutdown())
+                const auto activeDevices = deviceRegistry.GetActiveDevices();
+                if (activeDevices.empty())
                 {
-                    break;
-                }
-                // If the config is invalid, then skip it
-                if (config.GetIp().empty())
-                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(200));
                     continue;
                 }
 
-                // Check if the newly found device is a new device
-                const bool isNew = deviceRegistry.AddOrUpdateDevice(config.GetDeviceName(), config.GetIp(),
-                                                                    config.GetPort());
-                if (isNew)
+                const auto &config = activeDevices.front();
+                const auto selectedConfig = Pairing::PairingManager::HandleDevicePairing(config, deviceRegistry);
+
+                if (!selectedConfig.has_value())
                 {
-                    // If it is a new device then handle device pairing
-                    const auto selectedConfig = Pairing::PairingManager::HandleDevicePairing(config, deviceRegistry);
-
-                    if (!selectedConfig.has_value())
-                    {
-                        continue;
-                    }
-
-                    Network::Sockets::AndroidSocketClient::ConnectToService(*selectedConfig);
-                    // Here the Listener is connected and listening
-                    std::clog << logName << "Connection lost or ended." << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                    continue;
                 }
 
-                // Do a little cooldown after a connection ended to avoid connection storms
+                Network::Sockets::AndroidSocketClient::ConnectToService(*selectedConfig);
+                std::clog << logName << "Connection lost or ended." << std::endl;
+
                 if (!ShutdownHandler::ShouldShutdown())
                 {
                     std::clog << logName << "Waiting 3 seconds before retrying..." << std::endl;
                     std::this_thread::sleep_for(std::chrono::seconds(3));
                 }
             }
+
+            serviceDiscovery.Stop();
         }
 
     private:

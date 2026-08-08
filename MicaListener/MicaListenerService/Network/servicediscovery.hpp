@@ -16,6 +16,9 @@
 #include <iostream>
 #include <functional>
 #include <utility>
+#include <thread>
+#include <atomic>
+#include <unordered_map>
 
 #include "deviceregistry.hpp"
 #include "networkconfig.hpp"
@@ -25,6 +28,7 @@ namespace MicaListener::MicaListenerService::Network
 {
     using ServiceLostCallback = std::function<void(const std::string &serviceName)>;
     using ServiceResolvedCallback = std::function<void(const NetworkConfig &)>;
+    using BatchCompleteCallback = std::function<void()>;
 
     class ServiceDiscovery
     {
@@ -34,14 +38,14 @@ namespace MicaListener::MicaListenerService::Network
         /// @param _deviceRegistry Reference to the shared device registry
         explicit ServiceDiscovery(std::string _serviceName, DeviceRegistry &_deviceRegistry);
 
-        /// @brief Starts the discovery loop and searches for the service
-        void FindService();
+        /// @brief Destructor, stops the discovery background thread if running
+        ~ServiceDiscovery();
 
-        /// @brief Listens for service resolution synchronously and returns the resolved NetworkConfig
-        NetworkConfig ListenForService();
+        /// @brief Starts the background discovery thread
+        void Start();
 
-        /// @brief Stops the discovery loop and frees resources
-        void StopService() const;
+        /// @brief Stops the discovery loop and joins the background thread
+        void Stop();
 
         /// @brief Sets the callback function for when a service is lost
         /// @param _callback The function to call
@@ -50,6 +54,10 @@ namespace MicaListener::MicaListenerService::Network
         /// @brief Sets the callback function for when a service is successfully resolved
         /// @param _callback The function to call with the resolved network config
         void SetOnServiceResolved(ServiceResolvedCallback _callback);
+
+        /// @brief Sets the callback function for when Avahi finishes the initial network scan batch
+        /// @param _callback The function to call
+        void SetOnBatchComplete(BatchCompleteCallback _callback);
 
     private:
         /// @brief Log prefix for the Service Discovery
@@ -88,8 +96,14 @@ namespace MicaListener::MicaListenerService::Network
         /// @brief Smart pointer for the Service Browser
         std::unique_ptr<AvahiServiceBrowser, AvahiServiceBrowserDeleter> browser;
 
-        /// @brief Smart pointer for the Service Resolver
-        std::unique_ptr<AvahiServiceResolver, AvahiServiceResolverDeleter> resolver;
+        /// @brief Map of active service resolvers keyed by service name
+        std::unordered_map<std::string, std::unique_ptr<AvahiServiceResolver, AvahiServiceResolverDeleter>> resolvers;
+
+        /// @brief Background thread for running the Avahi simple poll loop
+        std::thread discoveryThread;
+
+        /// @brief Atomic flag indicating whether the background loop is running
+        std::atomic<bool> isRunning{false};
 
         /// @brief Name of the service to search for
         std::string serviceName;
@@ -102,6 +116,9 @@ namespace MicaListener::MicaListenerService::Network
 
         /// @brief Callback to main when the Service is resolved
         ServiceResolvedCallback onServiceResolved;
+
+        /// @brief Callback when Avahi finishes initial network scan batch
+        BatchCompleteCallback onBatchComplete;
 
         /// @brief Internal helper to create the Avahi Simple Poll Loop
         void CreateSimplePollLoop();

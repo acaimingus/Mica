@@ -12,52 +12,46 @@ namespace MicaListener::MicaListenerService::Network
     using ServiceLostCallback = std::function<void(const std::string &serviceName)>;
     using ServiceResolvedCallback = std::function<void(const NetworkConfig &)>;
 
-    ServiceDiscovery::ServiceDiscovery(std::string _serviceName, DeviceRegistry &_deviceRegistry) : serviceName(std::move(_serviceName)), deviceRegistry(_deviceRegistry)
+    ServiceDiscovery::ServiceDiscovery(std::string _serviceName, DeviceRegistry &_deviceRegistry)
+        : serviceName(std::move(_serviceName)), deviceRegistry(_deviceRegistry)
     {
         CreateSimplePollLoop();
     }
 
-    void ServiceDiscovery::FindService()
+    ServiceDiscovery::~ServiceDiscovery()
     {
+        Stop();
+    }
+
+    void ServiceDiscovery::Start()
+    {
+        if (isRunning) return;
         CreateClient();
 
-        // Instead of using the normal poll loop manually loop while checking if the application should shut down
-        while (!Lifecycle::ShutdownHandler::ShouldShutdown())
+        isRunning = true;
+        discoveryThread = std::thread([this]()
         {
-            if (avahi_simple_poll_iterate(simplePoll.get(), 500) != 0)
+            while (isRunning && !Lifecycle::ShutdownHandler::ShouldShutdown())
             {
-                break;
+                if (avahi_simple_poll_iterate(simplePoll.get(), 100) != 0)
+                {
+                    break;
+                }
             }
-        }
+        });
     }
 
-    NetworkConfig ServiceDiscovery::ListenForService()
+    void ServiceDiscovery::Stop()
     {
-        std::string foundIp;
-        int foundPort = 0;
-        std::string foundName;
+        if (!isRunning.exchange(false)) return;
 
-        SetOnServiceResolved(
-            [&](const NetworkConfig &_config)
-            {
-                foundIp = _config.GetIp();
-                foundPort = _config.GetPort();
-                foundName = _config.GetDeviceName();
-                std::clog << logName << "Received Service info: " << foundIp << " / " << foundPort << std::endl;
-                StopService();
-            });
-
-        std::clog << logName << "Looking for services..." << std::endl;
-        FindService();
-
-        return NetworkConfig(foundIp, foundPort, foundName, std::chrono::steady_clock::now());
-    }
-
-    void ServiceDiscovery::StopService() const
-    {
         if (simplePoll)
         {
             avahi_simple_poll_quit(simplePoll.get());
+        }
+        if (discoveryThread.joinable())
+        {
+            discoveryThread.join();
         }
     }
 
@@ -69,6 +63,11 @@ namespace MicaListener::MicaListenerService::Network
     void ServiceDiscovery::SetOnServiceResolved(ServiceResolvedCallback _callback)
     {
         onServiceResolved = std::move(_callback);
+    }
+
+    void ServiceDiscovery::SetOnBatchComplete(BatchCompleteCallback _callback)
+    {
+        onBatchComplete = std::move(_callback);
     }
 
     void ServiceDiscovery::AvahiSimplePollDeleter::operator()(AvahiSimplePoll *_simplePoll) const
@@ -137,16 +136,20 @@ namespace MicaListener::MicaListenerService::Network
                                                  const AvahiProtocol _protocol,
                                                  const char *_name, const char *_type, const char *_domain)
     {
-        std::clog << logName << "Creating the Resolver..." << std::endl;
+        std::clog << logName << "Creating the Resolver for " << (_name ? _name : "(null)") << "..." << std::endl;
         // Create the Service Resolver
         // Only resolve for IPv4 services for simplicity
-        resolver.reset(avahi_service_resolver_new(_client, _interface, _protocol, _name, _type, _domain,
-                                                  AVAHI_PROTO_INET, static_cast<AvahiLookupFlags>(0),
-                                                  ResolveCallback, this));
-        if (!resolver)
+        std::unique_ptr<AvahiServiceResolver, AvahiServiceResolverDeleter> newResolver(
+            avahi_service_resolver_new(_client, _interface, _protocol, _name, _type, _domain,
+                                       AVAHI_PROTO_INET, static_cast<AvahiLookupFlags>(0),
+                                       ResolveCallback, this));
+        if (!newResolver)
         {
-            std::cerr << logName << "Failed to creat the Avahi Service Resolver" << std::endl;
-            avahi_simple_poll_quit(simplePoll.get());
+            std::cerr << logName << "Failed to create the Avahi Service Resolver for " << (_name ? _name : "(null)") << std::endl;
+        }
+        else if (_name != nullptr)
+        {
+            resolvers[_name] = std::move(newResolver);
         }
     }
 
@@ -210,6 +213,7 @@ namespace MicaListener::MicaListenerService::Network
                         << " domain: " << (_domain ? _domain : "(null)") << std::endl;
                 if (_name != nullptr)
                 {
+                    resolvers.erase(_name);
                     deviceRegistry.RemoveDevice(_name);
                 }
                 if (onServiceLost)
@@ -219,6 +223,10 @@ namespace MicaListener::MicaListenerService::Network
                 break;
             case AVAHI_BROWSER_ALL_FOR_NOW:
                 std::clog << "Avahi Browser has found every entry for now." << std::endl;
+                if (onBatchComplete)
+                {
+                    onBatchComplete();
+                }
                 break;
             case AVAHI_BROWSER_CACHE_EXHAUSTED:
                 std::clog << "Avahi Cache was exhausted." << std::endl;
@@ -252,8 +260,15 @@ namespace MicaListener::MicaListenerService::Network
                 avahi_address_snprint(address, sizeof(address), _address);
                 std::clog << "Avahi Service Resolver found the Service: " << _name << " / " << address << " / " <<
                         _port << std::endl;
+                if (_name != nullptr)
+                {
+                    deviceRegistry.AddOrUpdateDevice(_name, address, _port);
+                }
                 const NetworkConfig networkConfig(address, _port, _name ? _name : "", std::chrono::steady_clock::now());
-                onServiceResolved(networkConfig);
+                if (onServiceResolved)
+                {
+                    onServiceResolved(networkConfig);
+                }
                 break;
         }
     }
