@@ -15,6 +15,9 @@
 #include <cstring>
 #include <vector>
 
+#include "../../Audio/sinkmanager.hpp"
+#include "../../Audio/audioplayer.hpp"
+#include "../../Lifecycle/shutdownhandler.hpp"
 #include "../networkconfig.hpp"
 
 namespace MicaListener::MicaListenerService::Network::Sockets
@@ -31,6 +34,10 @@ namespace MicaListener::MicaListenerService::Network::Sockets
         /// @brief Method for reading data from the socket
         ssize_t Read(std::vector<uint8_t> &_buffer) const;
 
+        /// @brief Creates a virtual PulseAudio sink, connects to the given service and
+        ///        streams received audio data until the connection is lost or shutdown is requested
+        /// @param _config The network address and port of the discovered Mica service
+        static void ConnectToService(const Network::NetworkConfig &_config);
     private:
         /// @brief Log prefix for the Socket Client
         static inline const std::string logName = "\033[34mSOCKET\033[0m\t\t";

@@ -83,4 +83,50 @@ namespace MicaListener::MicaListenerService::Network::Sockets
         }
         return bytesRead;
     }
+
+    void AndroidSocketClient::ConnectToService(const Network::NetworkConfig &_config)
+    {
+        try
+        {
+            const Audio::SinkManager sinkManager;
+            Audio::AudioPlayer audioPlayer;
+            // I don't know why this device is named Mica and I cannot figure it out
+            // But it works, so I guess that's fine?
+            audioPlayer.Initialize("Mica");
+            std::clog << logName << "Audio player is set up!" << std::endl;
+
+            const AndroidSocketClient socketClient(_config);
+            constexpr int bufferSize = 4096 * 2;
+            std::vector<uint8_t> buffer(bufferSize);
+
+            while (!Lifecycle::ShutdownHandler::ShouldShutdown())
+            {
+                const ssize_t bytesRead = socketClient.Read(buffer);
+                // There is an error or a timeout
+                if (bytesRead < 0)
+                {
+                    // Check if there is a timeout
+                    if (errno == EAGAIN || errno == EWOULDBLOCK)
+                    {
+                        continue;
+                    }
+                    // Exit loop on error
+                    break;
+                }
+                // The connection was closed
+                if (bytesRead == 0)
+                {
+                    std::clog << logName << "Connection lost." << std::endl;
+                    break;
+                }
+
+                // Data was received
+                std::vector<uint8_t> chunk(buffer.begin(), buffer.begin() + bytesRead);
+                audioPlayer.PlayBuffer(chunk);
+            }
+        } catch (const std::runtime_error &error)
+        {
+            std::cerr << logName << "Connection error: " << error.what() << std::endl;
+        }
+    }
 }

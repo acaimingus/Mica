@@ -29,6 +29,8 @@ namespace MicaListener::MicaListenerService::Audio
 
     void AudioPlayer::Initialize(const std::string &_deviceName)
     {
+        std::clog << logName << "Preparing audio player..." << std::endl;
+
         // Get the device
         device.reset(alcOpenDevice(_deviceName.empty() ? nullptr : _deviceName.c_str()));
         // Check if device opened correctly

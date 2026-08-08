@@ -20,24 +20,17 @@ namespace MicaListener::MicaListenerService::Audio
     class SinkManager
     {
     public:
-        /// @brief Internal technical sink name
-        const std::string sinkName = "Mica-Microphone";
-
-        /// @brief Internal technical source name
-        const std::string sourceName = "Mica-Virtual-Mic";
-
-        /// @brief Pretty sink name (for applications like Discord)
-        const std::string sinkDescription = "Mica Virtual Sink (Output)";
-
-        /// @brief Pretty source name (for applications like Discord)
-        const std::string sourceDescription = "Mica Virtual Microphone (Input)";
-
         /// @brief Constructor, checks for old PulseAudio devices, removes them and then creates new devices
         SinkManager()
         {
+            std::clog << logName << "Creating sink device..." << std::endl;
             CheckAndCleanOldDevices();
             sinkFile.open(".micasinks");
             CreateDevices();
+            std::clog << logName << "Sink device created successfully!" << std::endl;
+
+            setenv("PULSE_SINK", sinkName.c_str(), 1);
+            std::clog << logName << "Enforced PulseAudio Sink: " << sinkName << std::endl;
         }
 
         /// @brief Destructor, cleans up the created PulseAudio devices
@@ -52,6 +45,18 @@ namespace MicaListener::MicaListenerService::Audio
     private:
         /// @brief Log prefix for the Sink Manager
         static inline const std::string logName = "\033[36mSINKMANAGER\033[0m\t";
+
+        /// @brief Internal technical sink name
+        const std::string sinkName = "Mica-Microphone";
+
+        /// @brief Internal technical source name
+        const std::string sourceName = "Mica-Virtual-Mic";
+
+        /// @brief Pretty sink name (for applications like Discord)
+        const std::string sinkDescription = "Mica Virtual Sink (Output)";
+
+        /// @brief Pretty source name (for applications like Discord)
+        const std::string sourceDescription = "Mica Virtual Microphone (Input)";
 
         /// @brief List for all loaded modules (Sink + Remap)
         std::vector<std::string> loadedModuleIds;
