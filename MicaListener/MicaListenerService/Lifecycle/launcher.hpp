@@ -41,8 +41,10 @@ namespace MicaListener::MicaListenerService::Lifecycle
             // Main loop of the program
             while (!ShutdownHandler::ShouldShutdown())
             {
+                std::clog << logName << "Creating the Service Discovery for '" << serviceName << "'..." << std::endl;
+                Network::ServiceDiscovery serviceDiscovery(serviceName, deviceRegistry);
                 std::clog << logName << "Listening for services..." << std::endl;
-                Network::NetworkConfig config = ListenForService();
+                Network::NetworkConfig config = serviceDiscovery.ListenForService();
 
                 // If the app should shut down, then break the main loop
                 if (ShutdownHandler::ShouldShutdown())
@@ -87,44 +89,6 @@ namespace MicaListener::MicaListenerService::Lifecycle
         static constexpr std::string logName = "\033[33mMAIN\033[0m\t\t";
         /// @brief The name of the service to look for
         static constexpr std::string serviceName = "_micaapp._tcp";
-
-        /// @brief Waits until the Mica mDNS service is found and returns its network address
-        /// @return A NetworkConfig with the resolved IP and port; IP is empty on shutdown
-        static Network::NetworkConfig ListenForService()
-        {
-            std::string foundIp;
-            int foundPort = 0;
-            std::string foundName;
-
-            // Initialize the Service Discovery
-            std::clog << logName << "Creating the Service Discovery for '" << serviceName << "'..." << std::endl;
-            Network::ServiceDiscovery serviceDiscovery(serviceName);
-
-            // Set the callback when the Service connection gets lost again
-            serviceDiscovery.SetOnServiceLost(
-                [&](const std::string &name)
-                {
-                    std::clog << logName << "Connection loss with " << name << " acknowledged." << std::endl;
-                    deviceRegistry.RemoveDevice(name);
-                });
-
-            // Set the Callback when the Service gets resolved
-            serviceDiscovery.SetOnServiceResolved(
-                [&](const Network::NetworkConfig &_config)
-                {
-                    foundIp = _config.GetIp();
-                    foundPort = _config.GetPort();
-                    foundName = _config.GetDeviceName();
-                    std::clog << logName << "Received Service info: " << foundIp << " / " << foundPort << std::endl;
-                    serviceDiscovery.StopService();
-                });
-
-            // Find the needed service
-            std::clog << logName << "Looking for services..." << std::endl;
-            serviceDiscovery.FindService();
-
-            return Network::NetworkConfig(foundIp, foundPort, foundName, std::chrono::steady_clock::now());
-        }
 
         /// @brief Creates a virtual PulseAudio sink, connects to the given service and
         ///        streams received audio data until the connection is lost or shutdown is requested

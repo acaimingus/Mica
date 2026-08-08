@@ -12,7 +12,7 @@ namespace MicaListener::MicaListenerService::Network
     using ServiceLostCallback = std::function<void(const std::string &serviceName)>;
     using ServiceResolvedCallback = std::function<void(const NetworkConfig &)>;
 
-    ServiceDiscovery::ServiceDiscovery(std::string _serviceName) : serviceName(std::move(_serviceName))
+    ServiceDiscovery::ServiceDiscovery(std::string _serviceName, DeviceRegistry &_deviceRegistry) : serviceName(std::move(_serviceName)), deviceRegistry(_deviceRegistry)
     {
         CreateSimplePollLoop();
     }
@@ -29,6 +29,28 @@ namespace MicaListener::MicaListenerService::Network
                 break;
             }
         }
+    }
+
+    NetworkConfig ServiceDiscovery::ListenForService()
+    {
+        std::string foundIp;
+        int foundPort = 0;
+        std::string foundName;
+
+        SetOnServiceResolved(
+            [&](const NetworkConfig &_config)
+            {
+                foundIp = _config.GetIp();
+                foundPort = _config.GetPort();
+                foundName = _config.GetDeviceName();
+                std::clog << logName << "Received Service info: " << foundIp << " / " << foundPort << std::endl;
+                StopService();
+            });
+
+        std::clog << logName << "Looking for services..." << std::endl;
+        FindService();
+
+        return NetworkConfig(foundIp, foundPort, foundName, std::chrono::steady_clock::now());
     }
 
     void ServiceDiscovery::StopService() const
@@ -186,7 +208,14 @@ namespace MicaListener::MicaListenerService::Network
                 std::clog << "Removed service: " << (_name ? _name : "(null)")
                         << " type: " << (_type ? _type : "(null)")
                         << " domain: " << (_domain ? _domain : "(null)") << std::endl;
-                onServiceLost(_name);
+                if (_name != nullptr)
+                {
+                    deviceRegistry.RemoveDevice(_name);
+                }
+                if (onServiceLost)
+                {
+                    onServiceLost(_name);
+                }
                 break;
             case AVAHI_BROWSER_ALL_FOR_NOW:
                 std::clog << "Avahi Browser has found every entry for now." << std::endl;

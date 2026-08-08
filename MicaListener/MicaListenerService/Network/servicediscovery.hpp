@@ -17,6 +17,7 @@
 #include <functional>
 #include <utility>
 
+#include "deviceregistry.hpp"
 #include "networkconfig.hpp"
 #include "../Lifecycle/shutdownhandler.hpp"
 
@@ -30,10 +31,14 @@ namespace MicaListener::MicaListenerService::Network
     public:
         /// @brief Constructor for the ServiceDiscovery
         /// @param _serviceName Name of the service to look for (e.g. "_http._tcp")
-        explicit ServiceDiscovery(std::string _serviceName);
+        /// @param _deviceRegistry Reference to the shared device registry
+        explicit ServiceDiscovery(std::string _serviceName, DeviceRegistry &_deviceRegistry);
 
         /// @brief Starts the discovery loop and searches for the service
         void FindService();
+
+        /// @brief Listens for service resolution synchronously and returns the resolved NetworkConfig
+        NetworkConfig ListenForService();
 
         /// @brief Stops the discovery loop and frees resources
         void StopService() const;
@@ -88,6 +93,9 @@ namespace MicaListener::MicaListenerService::Network
 
         /// @brief Name of the service to search for
         std::string serviceName;
+
+        /// @brief Device registry reference for managing active discovered devices
+        DeviceRegistry &deviceRegistry;
 
         /// @brief Callback to main when a Service is lost
         ServiceLostCallback onServiceLost;
