@@ -10,6 +10,7 @@
 #include <string>
 #include <utility>
 #include <chrono>
+#include <vector>
 
 namespace MicaListener::MicaListenerService::Network
 {
@@ -59,6 +60,18 @@ namespace MicaListener::MicaListenerService::Network
             lastSeen = std::chrono::steady_clock::now();
         }
 
+        /// @brief Public getter for the shared secret
+        [[nodiscard]] std::vector<uint8_t> GetSharedSecret() const
+        {
+            return sharedSecret;
+        }
+
+        /// @brief Sets the shared secret for this device
+        void SetSharedSecret(const std::vector<uint8_t> &secret)
+        {
+            sharedSecret = secret;
+        }
+
     private:
         /// @brief IP of the network configuration
         std::string ip;
@@ -71,5 +84,8 @@ namespace MicaListener::MicaListenerService::Network
 
         /// @brief Timestamp of when the device was last seen
         TimePoint lastSeen;
+
+        /// @brief Shared secret for the device pairing
+        std::vector<uint8_t> sharedSecret;
     };
 }

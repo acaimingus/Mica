@@ -94,16 +94,74 @@ public class NsdController {
 
                         Log.i("MicrophoneService", "PC connected! IP: " + clientSocket.getInetAddress().getHostAddress());
 
-                        // Send a callback to the UI, that the connection is there
-                        if (microphoneService.connectionCallbacks != null) {
-                            microphoneService.connectionCallbacks.onConnected();
-                        }
+                        clientSocket.setSoTimeout(2000); // 2 second timeout for the handshake
+                        java.io.InputStream in = clientSocket.getInputStream();
+                        int cmd = in.read();
 
-                        // Clean up the client socket  if it was previously initialized
-                        cleanupClientSocket();
-                        // Set it and get its output stream
-                        receiverSocket = clientSocket;
-                        receiverStream = receiverSocket.getOutputStream();
+                        if (cmd == 0x01) {
+                            // Pairing Request
+                            byte[] peerKey = new byte[32];
+                            int read = 0;
+                            while (read < 32) {
+                                int r = in.read(peerKey, read, 32 - read);
+                                if (r == -1) break;
+                                read += r;
+                            }
+                            if (read == 32) {
+                                EcdhKeyExchange ecdh = new EcdhKeyExchange();
+                                byte[] secret = ecdh.computeSharedSecret(peerKey);
+                                if (secret != null) {
+                                    String pin = EcdhKeyExchange.derivePinFromSecret(secret);
+                                    
+                                    OutputStream out = clientSocket.getOutputStream();
+                                    out.write(0x01);
+                                    out.write(ecdh.getPublicKey());
+                                    out.flush();
+
+                                    // Save the secret temporarily or permanently
+                                    KeystoreManager.saveSharedSecret(microphoneService, secret);
+
+                                    // Notify UI
+                                    if (microphoneService.connectionCallbacks != null) {
+                                        microphoneService.connectionCallbacks.onPairingRequested(pin);
+                                    }
+                                }
+                            }
+                            clientSocket.close();
+                        } else if (cmd == 0x02) {
+                            // Stream Request
+                            byte[] token = new byte[32];
+                            int read = 0;
+                            while (read < 32) {
+                                int r = in.read(token, read, 32 - read);
+                                if (r == -1) break;
+                                read += r;
+                            }
+                            
+                            byte[] secret = KeystoreManager.loadSharedSecret(microphoneService);
+                            byte[] expectedToken = EcdhKeyExchange.generateAuthToken(secret);
+                            
+                            boolean valid = (read == 32) && java.util.Arrays.equals(token, expectedToken);
+
+                            if (valid) {
+                                clientSocket.setSoTimeout(0); // Reset timeout for infinite stream
+                                // Send a callback to the UI, that the connection is there
+                                if (microphoneService.connectionCallbacks != null) {
+                                    microphoneService.connectionCallbacks.onConnected();
+                                }
+                                // Clean up the client socket if it was previously initialized
+                                cleanupClientSocket();
+                                // Set it and get its output stream
+                                receiverSocket = clientSocket;
+                                receiverStream = receiverSocket.getOutputStream();
+                            } else {
+                                Log.e("MicrophoneService", "Invalid Auth Token! Closing connection.");
+                                clientSocket.close();
+                            }
+                        } else {
+                            Log.e("MicrophoneService", "Unknown command byte: " + cmd);
+                            clientSocket.close();
+                        }
 
                     } catch (IOException e) {
                         if (serverSocket == null || serverSocket.isClosed()) {

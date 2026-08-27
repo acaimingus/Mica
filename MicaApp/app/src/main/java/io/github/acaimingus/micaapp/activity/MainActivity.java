@@ -392,4 +392,16 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         deviceNameText.setText(DeviceIdentification.getDeviceName(this));
         toggleStatsVisibility(true);
     }
+
+    @Override
+    public void onPairingRequested(String pin) {
+        runOnUiThread(() -> {
+            new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Pairing Request")
+                .setMessage("A device wants to pair.\nPlease confirm that the following code is displayed on the device:\n\n" + pin)
+                .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
+                .setCancelable(false)
+                .show();
+        });
+    }
 }

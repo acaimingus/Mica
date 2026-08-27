@@ -34,6 +34,41 @@ namespace MicaPairingService::Network
             return SendMessage("CANCEL\n");
         }
 
+        /// @brief Requests a PIN for a specific device from MicaListener
+        static std::string RequestPin(const std::string &name, const std::string &ip, uint16_t port)
+        {
+            int clientFd = socket(AF_UNIX, SOCK_STREAM, 0);
+            if (clientFd < 0) return "";
+
+            sockaddr_un addr{};
+            addr.sun_family = AF_UNIX;
+            strncpy(addr.sun_path, socketPath, sizeof(addr.sun_path) - 1);
+
+            if (connect(clientFd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0)
+            {
+                close(clientFd);
+                return "";
+            }
+
+            const std::string message = "EXCHANGE_CODE\n" + name + "\n" + ip + "\n" + std::to_string(port) + "\n";
+            if (write(clientFd, message.c_str(), message.length()) != static_cast<ssize_t>(message.length()))
+            {
+                close(clientFd);
+                return "";
+            }
+
+            char buffer[64];
+            const ssize_t bytesRead = read(clientFd, buffer, sizeof(buffer) - 1);
+            close(clientFd);
+
+            if (bytesRead > 0)
+            {
+                buffer[bytesRead] = '\0';
+                return std::string(buffer);
+            }
+            return "";
+        }
+
     private:
         static bool SendMessage(const std::string &msg)
         {
@@ -61,4 +96,5 @@ namespace MicaPairingService::Network
             return bytesSent == static_cast<ssize_t>(msg.length());
         }
     };
+
 }

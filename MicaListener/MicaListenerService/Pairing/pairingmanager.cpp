@@ -17,12 +17,14 @@
 #include <unistd.h>
 #include <vector>
 #include <sys/wait.h>
+#include <arpa/inet.h>
 #include <glib.h>
 #include <libnotify/notify.h>
 
 #include "pairingmanager.hpp"
 #include "../Lifecycle/shutdownhandler.hpp"
 #include "../Network/Sockets/pairingsocketserver.hpp"
+#include "../Network/Cryptography/ecdhkeyexchange.hpp"
 
 namespace MicaListener::MicaListenerService::Pairing
 {
@@ -129,9 +131,6 @@ namespace MicaListener::MicaListenerService::Pairing
         return ".";
     }
 
-    /// @brief Handles desktop notification and IPC pairing confirmation for a newly discovered device
-    /// @param newDeviceConfig The network configuration of the newly discovered service
-    /// @return std::optional<Network::NetworkConfig> containing the user-selected device config, or std::nullopt if ignored/cancelled
     std::optional<Network::NetworkConfig> PairingManager::HandleDevicePairing(
         const Network::NetworkConfig &newDeviceConfig, const Network::DeviceRegistry &deviceRegistry)
     {
@@ -167,14 +166,16 @@ namespace MicaListener::MicaListenerService::Pairing
             std::atomic<bool> handled{false};
         };
         auto syncPairing = std::make_shared<SyncPairing>();
+        auto currentSecret = std::make_shared<std::vector<uint8_t>>();
 
         pairingSocketServer.Start(
-            [syncPairing](const std::string &name, const std::string &ip, uint16_t port)
+            [syncPairing, currentSecret](const std::string &name, const std::string &ip, uint16_t port)
             {
                 if (!syncPairing->handled.exchange(true))
                 {
-                    syncPairing->prom.set_value(
-                        Network::NetworkConfig(ip, port, name, std::chrono::steady_clock::now()));
+                    Network::NetworkConfig config(ip, port, name, std::chrono::steady_clock::now());
+                    config.SetSharedSecret(*currentSecret);
+                    syncPairing->prom.set_value(config);
                 }
             },
             [syncPairing]()
@@ -183,6 +184,65 @@ namespace MicaListener::MicaListenerService::Pairing
                 {
                     syncPairing->prom.set_value(std::nullopt);
                 }
+            },
+            [currentSecret](const std::string &/*name*/, const std::string &ip, uint16_t port) -> std::string
+            {
+                // Perform the TCP Handshake
+                int sock = socket(AF_INET, SOCK_STREAM, 0);
+                if (sock < 0) return "";
+
+                sockaddr_in serv_addr{};
+                serv_addr.sin_family = AF_INET;
+                serv_addr.sin_port = htons(port);
+                if (inet_pton(AF_INET, ip.c_str(), &serv_addr.sin_addr) <= 0)
+                {
+                    close(sock);
+                    return "";
+                }
+
+                if (connect(sock, reinterpret_cast<sockaddr*>(&serv_addr), sizeof(serv_addr)) < 0)
+                {
+                    close(sock);
+                    return "";
+                }
+
+                Network::Cryptography::EcdhKeyExchange ecdh;
+                auto myPubKey = ecdh.GetPublicKey();
+
+                std::vector<uint8_t> req(1 + myPubKey.size());
+                req[0] = 0x01; // KEY_EXCHANGE_REQ
+                std::copy(myPubKey.begin(), myPubKey.end(), req.begin() + 1);
+
+                if (write(sock, req.data(), req.size()) != static_cast<ssize_t>(req.size()))
+                {
+                    close(sock);
+                    return "";
+                }
+
+                std::vector<uint8_t> resp(33);
+                ssize_t bytesRead = 0;
+                while (bytesRead < 33)
+                {
+                    ssize_t res = read(sock, resp.data() + bytesRead, 33 - bytesRead);
+                    if (res <= 0) break;
+                    bytesRead += res;
+                }
+
+                if (bytesRead != 33 || resp[0] != 0x01) // KEY_EXCHANGE_RES
+                {
+                    close(sock);
+                    return "";
+                }
+                
+                close(sock);
+
+                std::vector<uint8_t> peerPubKey(resp.begin() + 1, resp.end());
+                auto secret = ecdh.ComputeSharedSecret(peerPubKey);
+                if (secret.empty()) return "";
+
+                *currentSecret = secret;
+
+                return Network::Cryptography::EcdhKeyExchange::DerivePinFromSecret(secret);
             }
         );
 
@@ -240,3 +300,4 @@ namespace MicaListener::MicaListenerService::Pairing
         return selectedConfigOpt;
     }
 }
+

@@ -25,16 +25,18 @@ namespace MicaListener::MicaListenerService::Network::Sockets
     public:
         using ConfirmCallback = std::function<void(const std::string &name, const std::string &ip, uint16_t port)>;
         using CancelCallback = std::function<void()>;
+        using ExchangeCodeCallback = std::function<std::string(const std::string &name, const std::string &ip, uint16_t port)>;
 
         static constexpr const char* socketPath = "/tmp/mica_pairing.sock";
 
         PairingSocketServer() = default;
         ~PairingSocketServer() { Stop(); }
 
-        bool Start(ConfirmCallback onConfirm, CancelCallback onCancel)
+        bool Start(ConfirmCallback onConfirm, CancelCallback onCancel, ExchangeCodeCallback onExchangeCode = nullptr)
         {
             confirmCb = std::move(onConfirm);
             cancelCb = std::move(onCancel);
+            exchangeCodeCb = std::move(onExchangeCode);
             isRunning = true;
 
             unlink(socketPath);
@@ -112,6 +114,7 @@ namespace MicaListener::MicaListenerService::Network::Sockets
         std::thread serverThread;
         ConfirmCallback confirmCb;
         CancelCallback cancelCb;
+        ExchangeCodeCallback exchangeCodeCb;
 
         static void TrimWhitespace(std::string &s)
         {
@@ -134,7 +137,6 @@ namespace MicaListener::MicaListenerService::Network::Sockets
 
                 char buffer[512];
                 const ssize_t bytesRead = read(clientFd, buffer, sizeof(buffer) - 1);
-                close(clientFd);
 
                 if (bytesRead > 0)
                 {
@@ -169,8 +171,27 @@ namespace MicaListener::MicaListenerService::Network::Sockets
                                 cancelCb();
                             }
                         }
+                        else if (command == "EXCHANGE_CODE")
+                        {
+                            std::string devName, ip, portStr;
+                            if (std::getline(ss, devName) && std::getline(ss, ip) && std::getline(ss, portStr))
+                            {
+                                TrimWhitespace(devName);
+                                TrimWhitespace(ip);
+                                TrimWhitespace(portStr);
+                                const auto port = static_cast<uint16_t>(std::stoi(portStr));
+
+                                std::clog << logName << "Received EXCHANGE_CODE command: " << devName << " (" << ip << ":" << port << ")" << std::endl;
+                                if (exchangeCodeCb)
+                                {
+                                    std::string pin = exchangeCodeCb(devName, ip, port);
+                                    write(clientFd, pin.c_str(), pin.length());
+                                }
+                            }
+                        }
                     }
                 }
+                close(clientFd);
             }
         }
     };

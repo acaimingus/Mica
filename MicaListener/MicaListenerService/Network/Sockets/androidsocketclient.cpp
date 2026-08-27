@@ -6,6 +6,7 @@
  */
 
 #include "androidsocketclient.hpp"
+#include "../Cryptography/ecdhkeyexchange.hpp"
 
 namespace MicaListener::MicaListenerService::Network::Sockets
 {
@@ -48,7 +49,28 @@ namespace MicaListener::MicaListenerService::Network::Sockets
             close(sock);
             throw std::runtime_error("Connection failed: " + errorMsg);
         }
-        std::clog << logName << "Connected!" << std::endl;
+
+        // Authenticate connection
+        std::vector<uint8_t> secret = _config.GetSharedSecret();
+        if (secret.size() > 0)
+        {
+            auto token = Cryptography::EcdhKeyExchange::GenerateAuthToken(secret);
+            std::vector<uint8_t> req(1 + token.size());
+            req[0] = 0x02; // STREAM_REQ
+            std::copy(token.begin(), token.end(), req.begin() + 1);
+
+            if (write(sock, req.data(), req.size()) != static_cast<ssize_t>(req.size()))
+            {
+                close(sock);
+                throw std::runtime_error("Failed to send auth token");
+            }
+        } else {
+            // For backwards compatibility or if pairing is skipped somehow
+            uint8_t req[1] = { 0x02 };
+            write(sock, req, 1);
+        }
+
+        std::clog << logName << "Connected and authenticated!" << std::endl;
     }
 
     AndroidSocketClient::~AndroidSocketClient()
