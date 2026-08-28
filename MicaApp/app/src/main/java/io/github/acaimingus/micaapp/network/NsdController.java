@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 import io.github.acaimingus.micaapp.service.MicrophoneService;
 
@@ -185,9 +186,14 @@ public class NsdController {
                                         microphoneService.connectionCallbacks.onPairingRequested(pin);
                                     }
 
-                                    // Wait for PC's response, wait infinitely
-                                    clientSocket.setSoTimeout(0);
-                                    int pcResp = in.read();
+                                    // Wait for PC's response
+                                    clientSocket.setSoTimeout(10000);
+                                    int pcResp = -1;
+                                    try {
+                                        pcResp = in.read();
+                                    } catch (SocketTimeoutException e) {
+                                        Log.e("MicrophoneService", "Pairing response timed out");
+                                    }
 
                                     synchronized (pairingLock) {
                                         if (pendingPairingSocket == clientSocket) {
