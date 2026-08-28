@@ -19,6 +19,7 @@
 #include "../Network/servicediscovery.hpp"
 #include "../Network/Sockets/androidsocketclient.hpp"
 #include "../Pairing/pairingmanager.hpp"
+#include "../Notification/notificationmanager.hpp"
 
 namespace MicaListener::MicaListenerService::Lifecycle
 {
@@ -34,7 +35,7 @@ namespace MicaListener::MicaListenerService::Lifecycle
         {
             std::clog << logName << "MicaListener started..." << std::endl;
 
-            Pairing::PairingManager::Initialize();
+            Notification::NotificationManager::Initialize();
 
             std::clog << logName << "Creating the Service Discovery for '" << serviceName << "'..." << std::endl;
             Network::ServiceDiscovery serviceDiscovery(serviceName, deviceRegistry);
