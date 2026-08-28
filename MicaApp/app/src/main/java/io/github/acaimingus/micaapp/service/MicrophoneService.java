@@ -225,7 +225,7 @@ public class MicrophoneService extends Service implements IAudioDataListener {
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, notificationChannelId)
                 .setContentTitle("Mica Microphone")
-                .setContentText("Currently connected...")
+                .setContentText("Connecting...")
                 .setSmallIcon(R.drawable.mic_24px)
                 .setContentIntent(notificationIntent)
                 .setOngoing(true);
@@ -282,6 +282,20 @@ public class MicrophoneService extends Service implements IAudioDataListener {
         }
     }
 
+    public void updateNotification(String text) {
+        PendingIntent notificationIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), PendingIntent.FLAG_IMMUTABLE);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, notificationChannelId)
+                .setContentTitle("Mica Microphone")
+                .setContentText(text)
+                .setSmallIcon(R.drawable.mic_24px)
+                .setContentIntent(notificationIntent)
+                .setOngoing(true);
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        if (manager != null) {
+            manager.notify(1, builder.build());
+        }
+    }
+
     /**
      * Called by {@link io.github.acaimingus.micaapp.audio.RecordingController} whenever
      * a new chunk of microphone data is available.
@@ -313,6 +327,7 @@ public class MicrophoneService extends Service implements IAudioDataListener {
                     connectionCallbacks.onDisconnected();
                 }
                 nsdController.cleanupClientSocket();
+                updateNotification("Connecting...");
             }
         }
     }

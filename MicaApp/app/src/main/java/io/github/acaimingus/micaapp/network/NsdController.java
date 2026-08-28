@@ -268,6 +268,7 @@ public class NsdController {
                                 if (microphoneService.connectionCallbacks != null) {
                                     microphoneService.connectionCallbacks.onConnected();
                                 }
+                                microphoneService.updateNotification("Connected!");
                                 // Clean up the client socket if it was previously initialized
                                 cleanupClientSocket();
                                 // Set it and get its output stream
