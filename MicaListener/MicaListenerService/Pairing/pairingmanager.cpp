@@ -20,6 +20,7 @@
 #include <arpa/inet.h>
 #include <glib.h>
 #include <libnotify/notify.h>
+#include <poll.h>
 
 #include "pairingmanager.hpp"
 #include "../Lifecycle/shutdownhandler.hpp"
@@ -167,6 +168,7 @@ namespace MicaListener::MicaListenerService::Pairing
         };
         auto syncPairing = std::make_shared<SyncPairing>();
         auto currentSecret = std::make_shared<std::vector<uint8_t>>();
+        auto currentSock = std::make_shared<int>(-1);
 
         pairingSocketServer.Start(
             [syncPairing, currentSecret](const std::string &name, const std::string &ip, uint16_t port)
@@ -185,10 +187,10 @@ namespace MicaListener::MicaListenerService::Pairing
                     syncPairing->prom.set_value(std::nullopt);
                 }
             },
-            [currentSecret](const std::string &/*name*/, const std::string &ip, uint16_t port) -> std::string
+            [currentSecret, currentSock](const std::string &/*name*/, const std::string &ip, const uint16_t port) -> std::string
             {
                 // Perform the TCP Handshake
-                int sock = socket(AF_INET, SOCK_STREAM, 0);
+                const int sock = socket(AF_INET, SOCK_STREAM, 0);
                 if (sock < 0) return "";
 
                 sockaddr_in serv_addr{};
@@ -211,7 +213,7 @@ namespace MicaListener::MicaListenerService::Pairing
 
                 std::vector<uint8_t> req(1 + myPubKey.size());
                 req[0] = 0x01; // KEY_EXCHANGE_REQ
-                std::copy(myPubKey.begin(), myPubKey.end(), req.begin() + 1);
+                std::ranges::copy(myPubKey, req.begin() + 1);
 
                 if (write(sock, req.data(), req.size()) != static_cast<ssize_t>(req.size()))
                 {
@@ -223,7 +225,7 @@ namespace MicaListener::MicaListenerService::Pairing
                 ssize_t bytesRead = 0;
                 while (bytesRead < 33)
                 {
-                    ssize_t res = read(sock, resp.data() + bytesRead, 33 - bytesRead);
+                    const ssize_t res = read(sock, resp.data() + bytesRead, 33 - bytesRead);
                     if (res <= 0) break;
                     bytesRead += res;
                 }
@@ -233,14 +235,17 @@ namespace MicaListener::MicaListenerService::Pairing
                     close(sock);
                     return "";
                 }
-                
-                close(sock);
 
-                std::vector<uint8_t> peerPubKey(resp.begin() + 1, resp.end());
-                auto secret = ecdh.ComputeSharedSecret(peerPubKey);
-                if (secret.empty()) return "";
+                const std::vector peerPubKey(resp.begin() + 1, resp.end());
+                const auto secret = ecdh.ComputeSharedSecret(peerPubKey);
+                if (secret.empty()) 
+                {
+                    close(sock);
+                    return "";
+                }
 
                 *currentSecret = secret;
+                *currentSock = sock; // KEEP SOCKET OPEN
 
                 return Network::Cryptography::EcdhKeyExchange::DerivePinFromSecret(secret);
             }
@@ -279,11 +284,82 @@ namespace MicaListener::MicaListenerService::Pairing
 
         while (!Lifecycle::ShutdownHandler::ShouldShutdown())
         {
-            if (future.wait_for(std::chrono::milliseconds(200)) == std::future_status::ready)
+            if (future.wait_for(std::chrono::milliseconds(50)) == std::future_status::ready)
             {
                 selectedConfigOpt = future.get();
                 break;
             }
+
+            int sock = *currentSock;
+            if (sock != -1)
+            {
+                // Poll the socket for messages from Android (e.g. Reject)
+                struct pollfd pfd;
+                pfd.fd = sock;
+                pfd.events = POLLIN;
+                if (poll(&pfd, 1, 0) > 0)
+                {
+                    uint8_t status = 0;
+                    if (read(sock, &status, 1) > 0)
+                    {
+                        if (status == 0xFF) // Phone rejected
+                        {
+                            std::clog << logName << "Phone rejected the pairing." << std::endl;
+                            system("killall MicaPairing");
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        // Socket closed unexpectedly
+                        std::clog << logName << "Phone closed the connection." << std::endl;
+                        system("killall MicaPairing");
+                        break;
+                    }
+                }
+            }
+        }
+
+        pairingSocketServer.Stop();
+
+        int sock = *currentSock;
+        if (sock != -1)
+        {
+            if (selectedConfigOpt.has_value())
+            {
+                // TUI Accepted. Send 0x00 to Phone
+                uint8_t msg = 0x00;
+                write(sock, &msg, 1);
+
+                // Wait for Phone to reply with 0x00
+                std::clog << logName << "Waiting for Phone confirmation..." << std::endl;
+                struct timeval tv{};
+                tv.tv_sec = 10; // Wait up to 10 seconds for user to tap on phone
+                tv.tv_usec = 0;
+                setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
+                uint8_t resp = 0;
+                if (read(sock, &resp, 1) > 0 && resp == 0x00)
+                {
+                    std::clog << logName << "Phone confirmed pairing!" << std::endl;
+                }
+                else
+                {
+                    std::clog << logName << "Phone did not confirm pairing (or rejected)." << std::endl;
+                    selectedConfigOpt = std::nullopt;
+
+                    // Let the phone know that the pairing timed out
+                    msg = 0xFF;
+                    write(sock, &msg, 1);
+                }
+            }
+            else
+            {
+                // TUI Rejected or Cancelled. Send 0xFF to Phone
+                uint8_t msg = 0xFF;
+                write(sock, &msg, 1);
+            }
+            close(sock);
         }
 
         pairingSocketServer.Stop();

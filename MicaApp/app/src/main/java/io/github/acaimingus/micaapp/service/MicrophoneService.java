@@ -13,18 +13,20 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
+
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
 import androidx.core.app.NotificationCompat;
+
 import java.io.IOException;
 import java.util.Arrays;
 
 import io.github.acaimingus.micaapp.R;
-import io.github.acaimingus.micaapp.network.ConnectionCallbacks;
 import io.github.acaimingus.micaapp.activity.MainActivity;
 import io.github.acaimingus.micaapp.audio.AudioProcessor;
 import io.github.acaimingus.micaapp.audio.IAudioDataListener;
 import io.github.acaimingus.micaapp.audio.RecordingController;
+import io.github.acaimingus.micaapp.network.ConnectionCallbacks;
 import io.github.acaimingus.micaapp.network.NsdController;
 
 /**
@@ -268,6 +270,18 @@ public class MicrophoneService extends Service implements IAudioDataListener {
         isRunning = false;
     }
 
+    public void confirmPairing() {
+        if (nsdController != null) {
+            nsdController.confirmPairing();
+        }
+    }
+
+    public void rejectPairing() {
+        if (nsdController != null) {
+            nsdController.rejectPairing();
+        }
+    }
+
     /**
      * Called by {@link io.github.acaimingus.micaapp.audio.RecordingController} whenever
      * a new chunk of microphone data is available.
@@ -280,7 +294,7 @@ public class MicrophoneService extends Service implements IAudioDataListener {
      */
     @Override
     public void onAudioDataReceived(byte[] data, int bytesRead) {
-        if(nsdController.receiverStream != null) {
+        if (nsdController.receiverStream != null) {
             try {
                 if (isMuted) {
                     // Send zero array

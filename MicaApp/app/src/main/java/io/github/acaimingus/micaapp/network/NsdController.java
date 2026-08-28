@@ -57,6 +57,61 @@ public class NsdController {
      */
     public OutputStream receiverStream;
 
+    private Socket pendingPairingSocket = null;
+    private byte[] pendingSecret = null;
+    private boolean androidConfirmed = false;
+    private boolean pcConfirmed = false;
+    private final Object pairingLock = new Object();
+
+    public void confirmPairing() {
+        new Thread(() -> {
+            synchronized (pairingLock) {
+                if (pendingPairingSocket != null) {
+                    androidConfirmed = true;
+                    try {
+                        pendingPairingSocket.getOutputStream().write(0x00);
+                        pendingPairingSocket.getOutputStream().flush();
+                    } catch (IOException exception) {
+                        // Ignore IO exception
+                    }
+                    checkPairingSuccess();
+                }
+            }
+        }).start();
+    }
+
+    public void rejectPairing() {
+        new Thread(() -> {
+            synchronized (pairingLock) {
+                if (pendingPairingSocket != null) {
+                    try {
+                        pendingPairingSocket.getOutputStream().write(0xFF);
+                        pendingPairingSocket.getOutputStream().flush();
+                        pendingPairingSocket.close();
+                    } catch (IOException exception) {
+                        // Ignore IO exception
+                    }
+                    pendingPairingSocket = null;
+                    pendingSecret = null;
+                }
+            }
+        }).start();
+    }
+
+    private void checkPairingSuccess() {
+        if (androidConfirmed && pcConfirmed && pendingSecret != null) {
+            KeystoreManager.saveSharedSecret(microphoneService, pendingSecret);
+            Log.i("MicrophoneService", "Pairing confirmed by both sides!");
+            try {
+                pendingPairingSocket.close();
+            } catch (IOException exception) {
+                // Ignore IO exception
+            }
+            pendingPairingSocket = null;
+            pendingSecret = null;
+        }
+    }
+
     /**
      * Reference to the owning {@link MicrophoneService}, used to invoke connection callbacks
      */
@@ -112,22 +167,80 @@ public class NsdController {
                                 byte[] secret = ecdh.computeSharedSecret(peerKey);
                                 if (secret != null) {
                                     String pin = EcdhKeyExchange.derivePinFromSecret(secret);
-                                    
+
                                     OutputStream out = clientSocket.getOutputStream();
                                     out.write(0x01);
                                     out.write(ecdh.getPublicKey());
                                     out.flush();
 
-                                    // Save the secret temporarily or permanently
-                                    KeystoreManager.saveSharedSecret(microphoneService, secret);
+                                    synchronized (pairingLock) {
+                                        pendingPairingSocket = clientSocket;
+                                        pendingSecret = secret;
+                                        androidConfirmed = false;
+                                        pcConfirmed = false;
+                                    }
 
                                     // Notify UI
                                     if (microphoneService.connectionCallbacks != null) {
                                         microphoneService.connectionCallbacks.onPairingRequested(pin);
                                     }
+
+                                    // Wait for PC's response, wait infinitely
+                                    clientSocket.setSoTimeout(0);
+                                    int pcResp = in.read();
+
+                                    synchronized (pairingLock) {
+                                        if (pendingPairingSocket == clientSocket) {
+                                            if (pcResp == 0x00) {
+                                                pcConfirmed = true;
+                                                checkPairingSuccess();
+                                            } else {
+                                                Log.i("MicrophoneService", "PC rejected pairing or disconnected.");
+                                                if (microphoneService.connectionCallbacks != null) {
+                                                    microphoneService.connectionCallbacks.onPairingRejected();
+                                                }
+                                                try {
+                                                    clientSocket.close();
+                                                } catch (IOException exception) {
+                                                    // Ignore IO exception
+                                                }
+                                                pendingPairingSocket = null;
+                                                pendingSecret = null;
+                                            }
+                                        }
+                                    }
+
+                                    if (pcResp == 0x00) {
+                                        // PC confirmed, but Android user might still be deciding.
+                                        // If PC times out and drops the connection, we must dismiss the Android UI.
+                                        // We block on another read. If pairing succeeds, the socket is closed 
+                                        // by checkPairingSuccess() and this throws an exception (which we catch below).
+                                        // If PC disconnects, it returns -1 (or 0xFF).
+                                        try {
+                                            int next = in.read();
+                                            if (next == -1 || next == 0xFF) {
+                                                synchronized (pairingLock) {
+                                                    if (pendingPairingSocket == clientSocket) {
+                                                        Log.i("MicrophoneService", "PC disconnected after initial confirmation.");
+                                                        if (microphoneService.connectionCallbacks != null) {
+                                                            microphoneService.connectionCallbacks.onPairingRejected();
+                                                        }
+                                                        try {
+                                                            clientSocket.close();
+                                                        } catch (IOException exception) {
+                                                            // Ignore IO exception
+                                                        }
+                                                        pendingPairingSocket = null;
+                                                        pendingSecret = null;
+                                                    }
+                                                }
+                                            }
+                                        } catch (IOException ignored) {
+                                        }
+                                    }
                                 }
                             }
-                            clientSocket.close();
+                            // Do not close clientSocket here, it is handled in checkPairingSuccess or reject
                         } else if (cmd == 0x02) {
                             // Stream Request
                             byte[] token = new byte[32];
@@ -137,10 +250,10 @@ public class NsdController {
                                 if (r == -1) break;
                                 read += r;
                             }
-                            
+
                             byte[] secret = KeystoreManager.loadSharedSecret(microphoneService);
                             byte[] expectedToken = EcdhKeyExchange.generateAuthToken(secret);
-                            
+
                             boolean valid = (read == 32) && java.util.Arrays.equals(token, expectedToken);
 
                             if (valid) {
@@ -218,13 +331,20 @@ public class NsdController {
                 String registeredName = NsdServiceInfo.getServiceName();
                 Log.d("MicrophoneService", "NSD service registered as: " + registeredName);
             }
-            @Override public void onRegistrationFailed(NsdServiceInfo serviceInfo, int errorCode) {
+
+            @Override
+            public void onRegistrationFailed(NsdServiceInfo serviceInfo, int errorCode) {
                 Log.e("MicrophoneService", "NSD service registration failed: " + errorCode);
             }
-            @Override public void onServiceUnregistered(NsdServiceInfo serviceInfo) {
+
+            @Override
+            public void onServiceUnregistered(NsdServiceInfo serviceInfo) {
                 Log.i("MicrophoneService", "NSD service deregistered.");
             }
-            @Override public void onUnregistrationFailed(NsdServiceInfo serviceInfo, int errorCode) { }
+
+            @Override
+            public void onUnregistrationFailed(NsdServiceInfo serviceInfo, int errorCode) {
+            }
         };
     }
 

@@ -34,4 +34,9 @@ public interface ConnectionCallbacks {
      * @param pin The 6-digit PIN to display to the user.
      */
     void onPairingRequested(String pin);
+
+    /**
+     * Called when the pairing is rejected by the remote device.
+     */
+    void onPairingRejected();
 }
