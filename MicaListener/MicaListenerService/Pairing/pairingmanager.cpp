@@ -170,6 +170,7 @@ namespace MicaListener::MicaListenerService::Pairing
 
         auto future = syncPairing->prom.get_future();
         std::optional<Network::NetworkConfig> selectedConfigOpt = std::nullopt;
+        std::optional<uint8_t> phoneResponse = std::nullopt;
 
         while (!Lifecycle::ShutdownHandler::ShouldShutdown())
         {
@@ -196,6 +197,10 @@ namespace MicaListener::MicaListenerService::Pairing
                             std::clog << logName << "Phone rejected the pairing." << std::endl;
                             system("killall MicaPairing");
                             break;
+                        }
+                        if (status == 0x00) // Phone accepted early
+                        {
+                            phoneResponse = status;
                         }
                     }
                     else
@@ -228,7 +233,18 @@ namespace MicaListener::MicaListenerService::Pairing
                 setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
                 uint8_t resp = 0;
-                if (read(sock, &resp, 1) > 0 && resp == 0x00)
+                bool gotResp = false;
+                if (phoneResponse.has_value())
+                {
+                    resp = phoneResponse.value();
+                    gotResp = true;
+                }
+                else
+                {
+                    gotResp = (read(sock, &resp, 1) > 0);
+                }
+
+                if (gotResp && resp == 0x00)
                 {
                     std::clog << logName << "Phone confirmed pairing!" << std::endl;
                 }
