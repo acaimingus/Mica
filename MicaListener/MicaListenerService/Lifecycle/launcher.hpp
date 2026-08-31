@@ -72,6 +72,8 @@ namespace MicaListener::MicaListenerService::Lifecycle
 
                 if (!selectedConfig.has_value())
                 {
+                    std::clog << logName << "Device '" << config.GetDeviceName() << "' rejected or timed out. Blacklisting..." << std::endl;
+                    deviceRegistry.BlacklistDevice(config.GetDeviceName());
                     std::this_thread::sleep_for(std::chrono::seconds(1));
                     continue;
                 }

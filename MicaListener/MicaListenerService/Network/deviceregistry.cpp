@@ -37,6 +37,7 @@ namespace MicaListener::MicaListenerService::Network
     bool DeviceRegistry::RemoveDevice(const std::string &name)
     {
         std::lock_guard<std::mutex> lock(registryMutex);
+        blacklistedDevices.erase(name);
         return devices.erase(name) > 0;
     }
 
@@ -48,7 +49,10 @@ namespace MicaListener::MicaListenerService::Network
 
         for (const auto &[name, config] : devices)
         {
-            result.push_back(config);
+            if (blacklistedDevices.find(name) == blacklistedDevices.end())
+            {
+                result.push_back(config);
+            }
         }
 
         return result;
@@ -58,11 +62,18 @@ namespace MicaListener::MicaListenerService::Network
     {
         std::lock_guard<std::mutex> lock(registryMutex);
         devices.clear();
+        blacklistedDevices.clear();
     }
 
     void DeviceRegistry::SetOnDeviceAdded(DeviceAddedCallback callback)
     {
         std::lock_guard<std::mutex> lock(registryMutex);
         onDeviceAdded = std::move(callback);
+    }
+
+    void DeviceRegistry::BlacklistDevice(const std::string &name)
+    {
+        std::lock_guard<std::mutex> lock(registryMutex);
+        blacklistedDevices.insert(name);
     }
 }

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <map>
+#include <set>
 #include <mutex>
 #include <vector>
 #include <functional>
@@ -39,9 +40,13 @@ namespace MicaListener::MicaListenerService::Network
         /// @brief Sets a callback to be invoked whenever a brand new device is discovered
         void SetOnDeviceAdded(DeviceAddedCallback callback);
 
+        /// @brief Blacklists a device so it is no longer returned by GetActiveDevices
+        void BlacklistDevice(const std::string &name);
+
     private:
         mutable std::mutex registryMutex;
         std::map<std::string, NetworkConfig> devices;
+        std::set<std::string> blacklistedDevices;
         DeviceAddedCallback onDeviceAdded;
     };
 }
