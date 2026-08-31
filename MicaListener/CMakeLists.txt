@@ -29,7 +29,7 @@ pkg_search_module(LIBNOTIFY REQUIRED libnotify)
 # Find OpenSSL
 find_package(OpenSSL REQUIRED)
 
-add_executable(MicaListener MicaListenerService/main.cpp
+add_executable(mica-listener MicaListenerService/main.cpp
         MicaListenerService/Network/servicediscovery.cpp 
         MicaListenerService/Network/deviceregistry.cpp
         MicaListenerService/Audio/audioplayer.cpp
@@ -40,7 +40,7 @@ add_executable(MicaListener MicaListenerService/main.cpp
         MicaListenerService/Notification/notificationmanager.hpp
 )
 
-add_executable(MicaPairing
+add_executable(mica-pairing
         MicaPairingService/main.cpp
         MicaPairingService/Lifecycle/launcher.cpp
         MicaPairingService/Network/receiveddevice.hpp
@@ -53,11 +53,11 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
 include(CheckIPOSupported)
 check_ipo_supported(RESULT lto_supported OUTPUT lto_error)
 if(lto_supported)
-    set_property(TARGET MicaListener PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+    set_property(TARGET mica-listener PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 # Include Directories
-target_include_directories(MicaListener PUBLIC
+target_include_directories(mica-listener PUBLIC
     ${AVAHI_CLIENT_INCLUDE_DIRS}
     ${OPENAL_INCLUDE_DIRS}
     ${LIBNOTIFY_INCLUDE_DIRS}
@@ -65,7 +65,7 @@ target_include_directories(MicaListener PUBLIC
 )
 
 # Link Libraries
-target_link_libraries(MicaListener PUBLIC
+target_link_libraries(mica-listener PUBLIC
     ${AVAHI_CLIENT_LIBRARIES}
     ${OPENAL_LIBRARIES}
     ${LIBNOTIFY_LIBRARIES}
