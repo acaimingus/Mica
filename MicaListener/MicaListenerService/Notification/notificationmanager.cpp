@@ -5,7 +5,7 @@ namespace MicaListener::MicaListenerService::Notification
     void NotificationManager::Initialize()
     {
         std::clog << logName << "Initializing libnotify..." << std::endl;
-        notify_init("MicaListener");
+        notify_init("mica-listener");
 
         GMainLoop *loop = g_main_loop_new(nullptr, FALSE);
         std::thread glibThread([loop]()

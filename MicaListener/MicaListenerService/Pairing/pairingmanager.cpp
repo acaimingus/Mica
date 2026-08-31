@@ -35,8 +35,8 @@ namespace MicaListener::MicaListenerService::Pairing
             return std::nullopt;
         }
 
-        std::clog << logName << "User selected Pair. Executing MicaPairing..." << std::endl;
-        const std::string exePath = GetExecutableDir() + "/MicaPairing";
+        std::clog << logName << "User selected Pair. Executing mica-pairing..." << std::endl;
+        const std::string exePath = GetExecutableDir() + "/mica-pairing";
 
         std::vector args = {exePath};
         for (const auto activeDevices = deviceRegistry.GetActiveDevices(); const auto &dev: activeDevices)
@@ -144,7 +144,7 @@ namespace MicaListener::MicaListenerService::Pairing
         GError *spawnError = nullptr;
         if (!g_spawn_async(nullptr, cArgs.data(), nullptr, G_SPAWN_DO_NOT_REAP_CHILD, nullptr, nullptr, &childPid, &spawnError))
         {
-            std::cerr << logName << "Failed to spawn MicaPairing: " << (spawnError
+            std::cerr << logName << "Failed to spawn mica-pairing: " << (spawnError
                                                                                    ? spawnError->message
                                                                                    : "unknown") << std::endl;
             if (spawnError) g_error_free(spawnError);
@@ -195,7 +195,7 @@ namespace MicaListener::MicaListenerService::Pairing
                         if (status == 0xFF) // Phone rejected
                         {
                             std::clog << logName << "Phone rejected the pairing." << std::endl;
-                            system("killall MicaPairing");
+                            system("killall mica-pairing");
                             break;
                         }
                         if (status == 0x00) // Phone accepted early
@@ -207,7 +207,7 @@ namespace MicaListener::MicaListenerService::Pairing
                     {
                         // Socket closed unexpectedly
                         std::clog << logName << "Phone closed the connection." << std::endl;
-                        system("killall MicaPairing");
+                        system("killall mica-pairing");
                         break;
                     }
                 }

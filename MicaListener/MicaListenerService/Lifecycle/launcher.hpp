@@ -33,7 +33,7 @@ namespace MicaListener::MicaListenerService::Lifecycle
         ///        streams audio until a shutdown is requested
         static void Launch()
         {
-            std::clog << logName << "MicaListener started..." << std::endl;
+            std::clog << logName << "mica-listener started..." << std::endl;
 
             Notification::NotificationManager::Initialize();
 
