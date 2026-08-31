@@ -15,7 +15,7 @@ namespace MicaListener::MicaListenerService::Notification
         glibThread.detach();
     }
 
-    bool NotificationManager::RequestDesktopNotification(const Network::NetworkConfig &config)
+    bool NotificationManager::RequestDesktopPairingNotification(const Network::NetworkConfig &config)
     {
         struct SyncData
         {
@@ -91,5 +91,13 @@ namespace MicaListener::MicaListenerService::Notification
 
         g_object_unref(n);
         return userAccepted;
+    }
+
+    void NotificationManager::RequestDesktopConnectedNotification()
+    {
+        NotifyNotification *n = notify_notification_new("Mica: Device connected successfully!",
+                                                        "The device has connected successfully.", "dialog-information");
+        GError *error = nullptr;
+        notify_notification_show(n, &error);
     }
 }

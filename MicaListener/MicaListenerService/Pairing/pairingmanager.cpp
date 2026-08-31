@@ -27,7 +27,7 @@ namespace MicaListener::MicaListenerService::Pairing
         // Socket server for handling pairing messages from the pairing service (accept/deny)
         Network::Sockets::PairingSocketServer pairingSocketServer;
 
-        const bool doPair = Notification::NotificationManager::RequestDesktopNotification(newDeviceConfig);
+        const bool doPair = Notification::NotificationManager::RequestDesktopPairingNotification(newDeviceConfig);
 
         if (!doPair)
         {

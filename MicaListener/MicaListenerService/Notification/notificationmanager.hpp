@@ -26,7 +26,10 @@ namespace MicaListener::MicaListenerService::Notification
         /// @brief Displays a desktop notification for a newly discovered Mica device and blocks until the user responds or dismisses it
         /// @param config The network configuration of the discovered device
         /// @return true if the user clicked the notification to pair, false if dismissed or ignored
-        static bool RequestDesktopNotification(const Network::NetworkConfig &config);
+        static bool RequestDesktopPairingNotification(const Network::NetworkConfig &config);
+
+        /// @brief Displays a desktop notification to notify the user that the connection between the phone and the computer was successful
+        static void RequestDesktopConnectedNotification();
 
     private:
         /// @brief Name of this class for the logger

@@ -7,6 +7,7 @@
 
 #include "androidsocketclient.hpp"
 #include "../Cryptography/ecdhkeyexchange.hpp"
+#include "../../Notification/notificationmanager.hpp"
 
 namespace MicaListener::MicaListenerService::Network::Sockets
 {
@@ -118,6 +119,10 @@ namespace MicaListener::MicaListenerService::Network::Sockets
             std::clog << logName << "Audio player is set up!" << std::endl;
 
             const AndroidSocketClient socketClient(_config);
+
+            // Notify the desktop that the connection was successful
+            Notification::NotificationManager::RequestDesktopConnectedNotification();
+            
             constexpr int bufferSize = 4096 * 2;
             std::vector<uint8_t> buffer(bufferSize);
 
