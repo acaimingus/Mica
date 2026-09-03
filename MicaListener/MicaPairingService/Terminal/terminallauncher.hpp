@@ -13,6 +13,7 @@
 #include <vector>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <cstdlib>
 
 namespace MicaPairingService::Terminal
 {
@@ -79,6 +80,7 @@ namespace MicaPairingService::Terminal
                     execv(cand.path.c_str(), cArgs.data());
                 }
             }
+            exit(10);
         }
     };
 }

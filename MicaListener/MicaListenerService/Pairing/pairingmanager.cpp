@@ -159,6 +159,11 @@ namespace MicaListener::MicaListenerService::Pairing
             waitpid(childPid, &status, 0);
             g_spawn_close_pid(childPid);
 
+            if (WIFEXITED(status) && WEXITSTATUS(status) == 10)
+            {
+                std::cerr << logName << "Failed to show pairing UI: No terminal emulator found on the system." << std::endl;
+            }
+
             if (!syncPairing->handled.exchange(true))
             {
                 syncPairing->prom.set_value(std::nullopt);
