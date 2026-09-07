@@ -19,6 +19,8 @@
 #include "../../Audio/audioplayer.hpp"
 #include "../../Lifecycle/shutdownhandler.hpp"
 #include "../networkconfig.hpp"
+#include "../Cryptography/ecdhkeyexchange.hpp"
+#include "../../Notification/notificationmanager.hpp"
 
 namespace MicaListener::MicaListenerService::Network::Sockets
 {
