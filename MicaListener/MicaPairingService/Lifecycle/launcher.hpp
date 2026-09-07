@@ -13,8 +13,8 @@
 
 #include "../Network/receiveddevice.hpp"
 #include "../Network/pairingsocketclient.hpp"
-#include "../Tui/pairingconfirmationtui.cpp"
-#include "../Tui/deviceselectiontui.cpp"
+#include "../Tui/pairingconfirmationtui.hpp"
+#include "../Tui/deviceselectiontui.hpp"
 #include "../Terminal/terminallauncher.hpp"
 
 namespace MicaPairingService::Lifecycle

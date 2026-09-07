@@ -62,6 +62,10 @@ add_executable(mica-pairing
         MicaPairingService/Network/receiveddevice.hpp
         MicaPairingService/Terminal/terminallauncher.cpp
         MicaPairingService/Terminal/terminallauncher.hpp
+        MicaPairingService/Tui/deviceselectiontui.cpp
+        MicaPairingService/Tui/deviceselectiontui.hpp
+        MicaPairingService/Tui/pairingconfirmationtui.cpp
+        MicaPairingService/Tui/pairingconfirmationtui.hpp
 )
 
 # Set O2 optimization for the release
