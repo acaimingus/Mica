@@ -54,6 +54,7 @@ add_executable(mica-listener MicaListenerService/main.cpp
 add_executable(mica-pairing
         MicaPairingService/main.cpp
         MicaPairingService/Lifecycle/launcher.cpp
+        MicaPairingService/Lifecycle/launcher.hpp
         MicaPairingService/Network/receiveddevice.hpp
 )
 

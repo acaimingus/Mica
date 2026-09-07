@@ -6,7 +6,7 @@
  */
 
 #include "Lifecycle/shutdownhandler.hpp"
-#include "Lifecycle/launcher.cpp"
+#include "Lifecycle/launcher.hpp"
 
 int main(const int argc, char* argv[])
 {
