@@ -41,6 +41,8 @@ add_executable(mica-listener MicaListenerService/main.cpp
         MicaListenerService/Lifecycle/launcher.hpp
         MicaListenerService/Lifecycle/shutdownhandler.cpp
         MicaListenerService/Lifecycle/shutdownhandler.hpp
+        MicaListenerService/Network/Sockets/pairingsocketserver.cpp
+        MicaListenerService/Network/Sockets/pairingsocketserver.hpp
         MicaListenerService/Network/Cryptography/ecdhkeyexchange.cpp
         MicaListenerService/Network/Cryptography/ecdhkeyexchange.hpp
         MicaListenerService/Notification/notificationmanager.cpp

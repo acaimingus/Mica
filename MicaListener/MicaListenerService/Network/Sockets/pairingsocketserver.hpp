@@ -20,179 +20,65 @@
 
 namespace MicaListener::MicaListenerService::Network::Sockets
 {
+    /// @brief Thread-safe Unix Domain Socket server for receiving IPC pairing commands from the pairing TUI/service
     class PairingSocketServer
     {
     public:
+        /// @brief Callback invoked when a PAIR command is confirmed
         using ConfirmCallback = std::function<void(const std::string &name, const std::string &ip, uint16_t port)>;
+
+        /// @brief Callback invoked when a CANCEL command is received
         using CancelCallback = std::function<void()>;
+
+        /// @brief Callback invoked when an EXCHANGE_CODE command is received, returning the verification PIN
         using ExchangeCodeCallback = std::function<std::string(const std::string &name, const std::string &ip, uint16_t port)>;
 
-        static constexpr const char* socketPath = "/tmp/mica_pairing.sock";
+        /// @brief Filesystem path for the Unix Domain Socket
+        static constexpr auto socketPath = "/tmp/mica_pairing.sock";
 
+        /// @brief Constructor
         PairingSocketServer() = default;
-        ~PairingSocketServer() { Stop(); }
 
-        bool Start(ConfirmCallback onConfirm, CancelCallback onCancel, ExchangeCodeCallback onExchangeCode = nullptr)
-        {
-            confirmCb = std::move(onConfirm);
-            cancelCb = std::move(onCancel);
-            exchangeCodeCb = std::move(onExchangeCode);
-            isRunning = true;
+        /// @brief Destructor, stops the server and cleans up resources
+        ~PairingSocketServer();
 
-            unlink(socketPath);
+        /// @brief Starts the Unix Domain Socket server and listens for incoming pairing messages
+        /// @param onConfirm Callback when pairing is confirmed
+        /// @param onCancel Callback when pairing is cancelled
+        /// @param onExchangeCode Optional callback for PIN/code exchange
+        /// @return True if the server started successfully, false otherwise
+        bool Start(ConfirmCallback onConfirm, CancelCallback onCancel, ExchangeCodeCallback onExchangeCode = nullptr);
 
-            serverFd = socket(AF_UNIX, SOCK_STREAM, 0);
-            if (serverFd < 0)
-            {
-                std::cerr << logName << "Failed to create Unix domain socket." << std::endl;
-                return false;
-            }
-
-            sockaddr_un addr{};
-            addr.sun_family = AF_UNIX;
-            strncpy(addr.sun_path, socketPath, sizeof(addr.sun_path) - 1);
-
-            if (bind(serverFd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0)
-            {
-                std::cerr << logName << "Failed to bind Unix domain socket to " << socketPath << std::endl;
-                close(serverFd);
-                serverFd = -1;
-                return false;
-            }
-
-            if (listen(serverFd, 5) < 0)
-            {
-                std::cerr << logName << "Failed to listen on Unix domain socket." << std::endl;
-                close(serverFd);
-                serverFd = -1;
-                return false;
-            }
-
-            std::clog << logName << "Unix socket server listening on " << socketPath << std::endl;
-
-            serverThread = std::thread([this]() { ListenLoop(); });
-            return true;
-        }
-
-        void Stop()
-        {
-            if (!isRunning.exchange(false))
-            {
-                return;
-            }
-
-            if (serverFd >= 0)
-            {
-                shutdown(serverFd, SHUT_RDWR);
-                close(serverFd);
-                serverFd = -1;
-            }
-
-            // Connect a dummy client to unblock any pending accept() in serverThread
-            int dummyFd = socket(AF_UNIX, SOCK_STREAM, 0);
-            if (dummyFd >= 0)
-            {
-                sockaddr_un addr{};
-                addr.sun_family = AF_UNIX;
-                strncpy(addr.sun_path, socketPath, sizeof(addr.sun_path) - 1);
-                connect(dummyFd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
-                close(dummyFd);
-            }
-
-            if (serverThread.joinable())
-            {
-                serverThread.join();
-            }
-            unlink(socketPath);
-        }
+        /// @brief Stops the server thread and cleans up the socket
+        void Stop();
 
     private:
+        /// @brief Log prefix for the IPC server
         static constexpr std::string_view logName = "\033[36mIPC-SERVER\033[0m\t";
 
+        /// @brief File descriptor for the listening server socket
         int serverFd{-1};
+
+        /// @brief Atomic flag indicating whether the server loop is running
         std::atomic<bool> isRunning{false};
+
+        /// @brief Thread running the accept/listen loop
         std::thread serverThread;
+
+        /// @brief Registered callback for PAIR command
         ConfirmCallback confirmCb;
+
+        /// @brief Registered callback for CANCEL command
         CancelCallback cancelCb;
+
+        /// @brief Registered callback for EXCHANGE_CODE command
         ExchangeCodeCallback exchangeCodeCb;
 
-        static void TrimWhitespace(std::string &s)
-        {
-            while (!s.empty() && (s.back() == '\r' || s.back() == '\n' || s.back() == ' '))
-            {
-                s.pop_back();
-            }
-        }
+        /// @brief Helper method to strip trailing whitespace and newlines from strings
+        /// @param s String to be trimmed in-place
+        static void TrimWhitespace(std::string &s);
 
-        void ListenLoop()
-        {
-            while (isRunning)
-            {
-                int clientFd = accept(serverFd, nullptr, nullptr);
-                if (clientFd < 0)
-                {
-                    if (!isRunning) break;
-                    continue;
-                }
-
-                char buffer[512];
-                const ssize_t bytesRead = read(clientFd, buffer, sizeof(buffer) - 1);
-
-                if (bytesRead > 0)
-                {
-                    buffer[bytesRead] = '\0';
-                    std::stringstream ss(buffer);
-                    if (std::string command; std::getline(ss, command))
-                    {
-                        TrimWhitespace(command);
-
-                        if (command == "PAIR")
-                        {
-                            std::string devName, ip, portStr;
-                            if (std::getline(ss, devName) && std::getline(ss, ip) && std::getline(ss, portStr))
-                            {
-                                TrimWhitespace(devName);
-                                TrimWhitespace(ip);
-                                TrimWhitespace(portStr);
-                                const auto port = static_cast<uint16_t>(std::stoi(portStr));
-
-                                std::clog << logName << "Received PAIR command: " << devName << " (" << ip << ":" << port << ")" << std::endl;
-                                if (confirmCb)
-                                {
-                                    confirmCb(devName, ip, port);
-                                }
-                            }
-                        }
-                        else if (command == "CANCEL")
-                        {
-                            std::clog << logName << "Received CANCEL command." << std::endl;
-                            if (cancelCb)
-                            {
-                                cancelCb();
-                            }
-                        }
-                        else if (command == "EXCHANGE_CODE")
-                        {
-                            std::string devName, ip, portStr;
-                            if (std::getline(ss, devName) && std::getline(ss, ip) && std::getline(ss, portStr))
-                            {
-                                TrimWhitespace(devName);
-                                TrimWhitespace(ip);
-                                TrimWhitespace(portStr);
-                                const auto port = static_cast<uint16_t>(std::stoi(portStr));
-
-                                std::clog << logName << "Received EXCHANGE_CODE command: " << devName << " (" << ip << ":" << port << ")" << std::endl;
-                                if (exchangeCodeCb)
-                                {
-                                    std::string pin = exchangeCodeCb(devName, ip, port);
-                                    write(clientFd, pin.c_str(), pin.length());
-                                }
-                            }
-                        }
-                    }
-                }
-                close(clientFd);
-            }
-        }
+        /// @brief Worker loop accepting client connections and processing commands
+        void ListenLoop() const;
     };
 }
