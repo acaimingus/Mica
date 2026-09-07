@@ -19,24 +19,13 @@ namespace MicaListener::MicaListenerService::Lifecycle
     public:
         /// @brief Method for handling the requested shutdown by the system
         /// @param signal The signal sent by the OS
-        static void HandleShutdown(int signal)
-        {
-            std::clog << logName << "Shutdown requested with the signal " << signal << std::endl;
-            shouldShutdown.store(true);
-        }
+        static void HandleShutdown(int signal);
 
         /// @brief Setup method for the Shutdown Handler
-        static void Setup()
-        {
-            std::signal(SIGINT, HandleShutdown);
-            std::signal(SIGTERM, HandleShutdown);
-        }
+        static void Setup();
 
         /// @brief Small helper method for returning the value if the program should shut down
-        static bool ShouldShutdown()
-        {
-            return shouldShutdown.load();
-        }
+        static bool ShouldShutdown();
 
     private:
         /// @brief Log prefix for the Shutdown Handler
