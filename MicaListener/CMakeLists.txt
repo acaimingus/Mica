@@ -55,6 +55,8 @@ add_executable(mica-pairing
         MicaPairingService/main.cpp
         MicaPairingService/Lifecycle/launcher.cpp
         MicaPairingService/Lifecycle/launcher.hpp
+        MicaPairingService/Lifecycle/shutdownhandler.cpp
+        MicaPairingService/Lifecycle/shutdownhandler.hpp
         MicaPairingService/Network/receiveddevice.hpp
 )
 
