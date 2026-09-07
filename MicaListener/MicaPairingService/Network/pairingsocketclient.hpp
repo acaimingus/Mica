@@ -16,85 +16,36 @@
 
 namespace MicaPairingService::Network
 {
+    /// @brief Unix Domain Socket client for communicating pairing decisions and requests back to MicaListener
     class PairingSocketClient
     {
     public:
+        /// @brief Socket path for IPC communication with MicaListener
         static constexpr auto socketPath = "/tmp/mica_pairing.sock";
 
         /// @brief Sends a confirmed device choice to MicaListener via Unix Domain Socket
-        static bool SendPairingConfirmation(const std::string &name, const std::string &ip, uint16_t port)
-        {
-            const std::string message = "PAIR\n" + name + "\n" + ip + "\n" + std::to_string(port) + "\n";
-            return SendMessage(message);
-        }
+        /// @param name Name of the device
+        /// @param ip IP address of the device
+        /// @param port Port of the device
+        /// @return True if message was sent successfully, false otherwise
+        static bool SendPairingConfirmation(const std::string &name, const std::string &ip, uint16_t port);
 
         /// @brief Sends a cancellation message to MicaListener via Unix Domain Socket
-        static bool SendPairingCancellation()
-        {
-            return SendMessage("CANCEL\n");
-        }
+        /// @return True if message was sent successfully, false otherwise
+        static bool SendPairingCancellation();
 
         /// @brief Requests a PIN for a specific device from MicaListener
-        static std::string RequestPin(const std::string &name, const std::string &ip, uint16_t port)
-        {
-            int clientFd = socket(AF_UNIX, SOCK_STREAM, 0);
-            if (clientFd < 0) return "";
-
-            sockaddr_un addr{};
-            addr.sun_family = AF_UNIX;
-            strncpy(addr.sun_path, socketPath, sizeof(addr.sun_path) - 1);
-
-            if (connect(clientFd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0)
-            {
-                close(clientFd);
-                return "";
-            }
-
-            const std::string message = "EXCHANGE_CODE\n" + name + "\n" + ip + "\n" + std::to_string(port) + "\n";
-            if (write(clientFd, message.c_str(), message.length()) != static_cast<ssize_t>(message.length()))
-            {
-                close(clientFd);
-                return "";
-            }
-
-            char buffer[64];
-            const ssize_t bytesRead = read(clientFd, buffer, sizeof(buffer) - 1);
-            close(clientFd);
-
-            if (bytesRead > 0)
-            {
-                buffer[bytesRead] = '\0';
-                return std::string(buffer);
-            }
-            return "";
-        }
+        /// @param name Name of the device
+        /// @param ip IP address of the device
+        /// @param port Port of the device
+        /// @return Verification PIN string, or empty string on failure
+        static std::string RequestPin(const std::string &name, const std::string &ip, uint16_t port);
 
     private:
-        static bool SendMessage(const std::string &msg)
-        {
-            int clientFd = socket(AF_UNIX, SOCK_STREAM, 0);
-            if (clientFd < 0)
-            {
-                // Failed to create Unix socket
-                return false;
-            }
-
-            sockaddr_un addr{};
-            addr.sun_family = AF_UNIX;
-            strncpy(addr.sun_path, socketPath, sizeof(addr.sun_path) - 1);
-
-            if (connect(clientFd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0)
-            {
-                // Failed to connect to socket path
-                close(clientFd);
-                return false;
-            }
-
-            const ssize_t bytesSent = write(clientFd, msg.c_str(), msg.length());
-            close(clientFd);
-
-            return bytesSent == static_cast<ssize_t>(msg.length());
-        }
+        /// @brief Helper method to connect to the Unix socket and send a message
+        /// @param msg The raw string message to send
+        /// @return True if sent successfully, false otherwise
+        static bool SendMessage(const std::string &msg);
     };
 
 }
