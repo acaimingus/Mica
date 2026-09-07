@@ -6,6 +6,7 @@
  */
 
 #include "pairingmanager.hpp"
+#include <signal.h>
 
 namespace MicaListener::MicaListenerService::Pairing
 {
@@ -200,7 +201,7 @@ namespace MicaListener::MicaListenerService::Pairing
                         if (status == 0xFF) // Phone rejected
                         {
                             std::clog << logName << "Phone rejected the pairing." << std::endl;
-                            system("killall mica-pairing");
+                            kill(childPid, SIGTERM);
                             break;
                         }
                         if (status == 0x00) // Phone accepted early
@@ -212,7 +213,7 @@ namespace MicaListener::MicaListenerService::Pairing
                     {
                         // Socket closed unexpectedly
                         std::clog << logName << "Phone closed the connection." << std::endl;
-                        system("killall mica-pairing");
+                        kill(childPid, SIGTERM);
                         break;
                     }
                 }
