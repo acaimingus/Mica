@@ -32,6 +32,8 @@ find_package(OpenSSL REQUIRED)
 add_executable(mica-listener MicaListenerService/main.cpp
         MicaListenerService/Network/servicediscovery.cpp
         MicaListenerService/Network/deviceregistry.cpp
+        MicaListenerService/Network/networkconfig.cpp
+        MicaListenerService/Network/networkconfig.hpp
         MicaListenerService/Audio/audioplayer.cpp
         MicaListenerService/Audio/sinkmanager.cpp
         MicaListenerService/Network/Sockets/androidsocketclient.cpp

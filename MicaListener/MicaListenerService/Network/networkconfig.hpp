@@ -25,52 +25,34 @@ namespace MicaListener::MicaListenerService::Network
         /// @param _port Port to be used
         /// @param _deviceName Name of the device
         /// @param _lastSeen Timestamp of the last connection attempt or discovery of the device
-        NetworkConfig(std::string _ip, const int _port, std::string _deviceName, const TimePoint _lastSeen)
-            : ip(std::move(_ip)), port(_port), deviceName(std::move(_deviceName)), lastSeen(_lastSeen)
-        {
-        }
+        NetworkConfig(std::string _ip, const int _port, std::string _deviceName, const TimePoint _lastSeen);
 
         /// @brief Public getter for the IP variable
-        [[nodiscard]] std::string GetIp() const
-        {
-            return ip;
-        }
+        /// @return IP address string
+        [[nodiscard]] std::string GetIp() const;
 
         /// @brief Public getter for the port variable
-        [[nodiscard]] int GetPort() const
-        {
-            return port;
-        }
+        /// @return Port number
+        [[nodiscard]] int GetPort() const;
 
         /// @brief Public getter for the device name
-        [[nodiscard]] std::string GetDeviceName() const
-        {
-            return deviceName;
-        }
+        /// @return Name of the device
+        [[nodiscard]] std::string GetDeviceName() const;
 
         /// @brief Public getter for the last seen timestamp
-        [[nodiscard]] TimePoint GetLastSeen() const
-        {
-            return lastSeen;
-        }
+        /// @return Timestamp of when the device was last seen
+        [[nodiscard]] TimePoint GetLastSeen() const;
 
         /// @brief Updates the lastSeen timestamp to current time
-        void Touch()
-        {
-            lastSeen = std::chrono::steady_clock::now();
-        }
+        void Touch();
 
         /// @brief Public getter for the shared secret
-        [[nodiscard]] std::vector<uint8_t> GetSharedSecret() const
-        {
-            return sharedSecret;
-        }
+        /// @return Vector of bytes representing the shared secret
+        [[nodiscard]] std::vector<uint8_t> GetSharedSecret() const;
 
         /// @brief Sets the shared secret for this device
-        void SetSharedSecret(const std::vector<uint8_t> &secret)
-        {
-            sharedSecret = secret;
-        }
+        /// @param secret Vector of bytes representing the shared secret
+        void SetSharedSecret(const std::vector<uint8_t> &secret);
 
     private:
         /// @brief IP of the network configuration
