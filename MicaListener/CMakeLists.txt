@@ -33,6 +33,7 @@ add_executable(mica-listener MicaListenerService/main.cpp
         MicaListenerService/Network/servicediscovery.cpp 
         MicaListenerService/Network/deviceregistry.cpp
         MicaListenerService/Audio/audioplayer.cpp
+        MicaListenerService/Audio/sinkmanager.cpp
         MicaListenerService/Network/Sockets/androidsocketclient.cpp
         MicaListenerService/Pairing/pairingmanager.cpp
         MicaListenerService/Lifecycle/launcher.hpp
