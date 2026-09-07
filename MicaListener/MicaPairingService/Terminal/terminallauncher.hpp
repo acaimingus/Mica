@@ -17,70 +17,14 @@
 
 namespace MicaPairingService::Terminal
 {
+    /// @brief Helper class to ensure MicaPairingService runs inside an interactive, visible terminal window
     class TerminalLauncher
     {
     public:
         /// @brief Ensures the process is running in an interactive TTY window.
         ///        If not, spawns an available terminal emulator running this executable and exits the background parent.
-        static void EnsureTerminalWindow(const int argc, char *argv[])
-        {
-            // If already attached to a terminal, no action needed
-            if (isatty(STDIN_FILENO) && isatty(STDOUT_FILENO))
-            {
-                return;
-            }
-
-            const std::string exePath = std::filesystem::canonical(argv[0]).string();
-
-            std::vector<std::string> deviceArgs;
-            for (int i = 1; i < argc; ++i)
-            {
-                deviceArgs.emplace_back(argv[i]);
-            }
-
-            struct TermCandidate
-            {
-                std::string path;
-                std::vector<std::string> flags;
-            };
-
-            const std::vector<TermCandidate> candidates = {
-                {"/usr/bin/gnome-terminal", {"--wait", "--"}},
-                {"/usr/bin/ptyxis", {"--wait", "--"}},
-                {"/usr/bin/konsole", {"--nofork", "-e"}},
-                {"/usr/bin/x-terminal-emulator", {"-e"}},
-                {"/usr/bin/xterm", {"-e"}},
-                {"/usr/bin/alacritty", {"-e"}},
-                {"/usr/bin/kitty", {"-e"}}
-            };
-
-            for (const auto &cand : candidates)
-            {
-                if (std::filesystem::exists(cand.path))
-                {
-                    std::vector<std::string> cmdStrings = {cand.path};
-                    for (const auto &f : cand.flags)
-                    {
-                        cmdStrings.push_back(f);
-                    }
-                    cmdStrings.push_back(exePath);
-                    for (const auto &arg : deviceArgs)
-                    {
-                        cmdStrings.push_back(arg);
-                    }
-
-                    std::vector<char *> cArgs;
-                    for (auto &s : cmdStrings)
-                    {
-                        cArgs.push_back(s.data());
-                    }
-                    cArgs.push_back(nullptr);
-
-                    // Directly replace the current process image so MicaListener's waitpid stays bound to this window
-                    execv(cand.path.c_str(), cArgs.data());
-                }
-            }
-            exit(10);
-        }
+        /// @param argc Command line argument count
+        /// @param argv Command line argument values
+        static void EnsureTerminalWindow(int argc, char *argv[]);
     };
 }

@@ -60,6 +60,8 @@ add_executable(mica-pairing
         MicaPairingService/Network/pairingsocketclient.cpp
         MicaPairingService/Network/pairingsocketclient.hpp
         MicaPairingService/Network/receiveddevice.hpp
+        MicaPairingService/Terminal/terminallauncher.cpp
+        MicaPairingService/Terminal/terminallauncher.hpp
 )
 
 # Set O2 optimization for the release
