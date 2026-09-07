@@ -6,7 +6,6 @@
  */
 
 #include "pairingmanager.hpp"
-#include <signal.h>
 
 namespace MicaListener::MicaListenerService::Pairing
 {
@@ -190,7 +189,7 @@ namespace MicaListener::MicaListenerService::Pairing
             if (sock != -1)
             {
                 // Poll the socket for messages from Android (e.g. Reject)
-                struct pollfd pfd;
+                struct pollfd pfd{};
                 pfd.fd = sock;
                 pfd.events = POLLIN;
                 if (poll(&pfd, 1, 0) > 0)

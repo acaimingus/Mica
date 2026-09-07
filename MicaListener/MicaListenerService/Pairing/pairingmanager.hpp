@@ -24,6 +24,7 @@
 #include <arpa/inet.h>
 #include <glib.h>
 #include <poll.h>
+#include <signal.h>
 
 #include "../Network/deviceregistry.hpp"
 #include "../Network/networkconfig.hpp"
