@@ -36,6 +36,7 @@ add_executable(mica-listener MicaListenerService/main.cpp
         MicaListenerService/Audio/sinkmanager.cpp
         MicaListenerService/Network/Sockets/androidsocketclient.cpp
         MicaListenerService/Pairing/pairingmanager.cpp
+        MicaListenerService/Lifecycle/launcher.cpp
         MicaListenerService/Lifecycle/launcher.hpp
         MicaListenerService/Notification/notificationmanager.cpp
         MicaListenerService/Notification/notificationmanager.hpp
