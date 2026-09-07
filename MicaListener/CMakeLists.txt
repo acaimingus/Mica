@@ -11,7 +11,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clan
     add_compile_options(-Wall -Wextra -Werror -pedantic)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_compile_options(/W4 /WX)
-endif()
+endif ()
 
 # Get PkgConfig
 find_package(PkgConfig REQUIRED)
@@ -30,11 +30,12 @@ pkg_search_module(LIBNOTIFY REQUIRED libnotify)
 find_package(OpenSSL REQUIRED)
 
 add_executable(mica-listener MicaListenerService/main.cpp
-        MicaListenerService/Network/servicediscovery.cpp 
+        MicaListenerService/Network/servicediscovery.cpp
         MicaListenerService/Network/deviceregistry.cpp
         MicaListenerService/Audio/audioplayer.cpp
         MicaListenerService/Audio/sinkmanager.cpp
         MicaListenerService/Network/Sockets/androidsocketclient.cpp
+        MicaListenerService/Network/Sockets/androidsocketclient.hpp
         MicaListenerService/Pairing/pairingmanager.cpp
         MicaListenerService/Lifecycle/launcher.cpp
         MicaListenerService/Lifecycle/launcher.hpp
@@ -58,23 +59,23 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
 # Set LTO if it's supported
 include(CheckIPOSupported)
 check_ipo_supported(RESULT lto_supported OUTPUT lto_error)
-if(lto_supported)
+if (lto_supported)
     set_property(TARGET mica-listener PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-endif()
+endif ()
 
 # Include Directories
 target_include_directories(mica-listener PUBLIC
-    ${AVAHI_CLIENT_INCLUDE_DIRS}
-    ${OPENAL_INCLUDE_DIRS}
-    ${LIBNOTIFY_INCLUDE_DIRS}
-    ${OPENSSL_INCLUDE_DIR}
+        ${AVAHI_CLIENT_INCLUDE_DIRS}
+        ${OPENAL_INCLUDE_DIRS}
+        ${LIBNOTIFY_INCLUDE_DIRS}
+        ${OPENSSL_INCLUDE_DIR}
 )
 
 # Link Libraries
 target_link_libraries(mica-listener PUBLIC
-    ${AVAHI_CLIENT_LIBRARIES}
-    ${OPENAL_LIBRARIES}
-    ${LIBNOTIFY_LIBRARIES}
-    OpenSSL::SSL 
-    OpenSSL::Crypto
+        ${AVAHI_CLIENT_LIBRARIES}
+        ${OPENAL_LIBRARIES}
+        ${LIBNOTIFY_LIBRARIES}
+        OpenSSL::SSL
+        OpenSSL::Crypto
 )
