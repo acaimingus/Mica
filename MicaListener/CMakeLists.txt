@@ -11,7 +11,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clan
     add_compile_options(-Wall -Wextra -Werror -pedantic)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_compile_options(/W4 /WX)
-endif()
+endif ()
 
 # Get PkgConfig
 find_package(PkgConfig REQUIRED)
@@ -23,8 +23,50 @@ pkg_search_module(AVAHI_CLIENT REQUIRED avahi-client)
 find_package(OpenAL REQUIRED)
 pkg_search_module(OPENAL REQUIRED openal)
 
-add_executable(MicaListener main.cpp servicediscovery.cpp audioplayer.cpp socketclient.cpp
-        servicediscovery.cpp)
+# Find libnotify
+pkg_search_module(LIBNOTIFY REQUIRED libnotify)
+
+# Find OpenSSL
+find_package(OpenSSL REQUIRED)
+
+add_executable(mica-listener MicaListenerService/main.cpp
+        MicaListenerService/Network/servicediscovery.cpp
+        MicaListenerService/Network/deviceregistry.cpp
+        MicaListenerService/Network/networkconfig.cpp
+        MicaListenerService/Network/networkconfig.hpp
+        MicaListenerService/Audio/audioplayer.cpp
+        MicaListenerService/Audio/sinkmanager.cpp
+        MicaListenerService/Network/Sockets/androidsocketclient.cpp
+        MicaListenerService/Network/Sockets/androidsocketclient.hpp
+        MicaListenerService/Pairing/pairingmanager.cpp
+        MicaListenerService/Lifecycle/launcher.cpp
+        MicaListenerService/Lifecycle/launcher.hpp
+        MicaListenerService/Lifecycle/shutdownhandler.cpp
+        MicaListenerService/Lifecycle/shutdownhandler.hpp
+        MicaListenerService/Network/Sockets/pairingsocketserver.cpp
+        MicaListenerService/Network/Sockets/pairingsocketserver.hpp
+        MicaListenerService/Network/Cryptography/ecdhkeyexchange.cpp
+        MicaListenerService/Network/Cryptography/ecdhkeyexchange.hpp
+        MicaListenerService/Notification/notificationmanager.cpp
+        MicaListenerService/Notification/notificationmanager.hpp
+)
+
+add_executable(mica-pairing
+        MicaPairingService/main.cpp
+        MicaPairingService/Lifecycle/launcher.cpp
+        MicaPairingService/Lifecycle/launcher.hpp
+        MicaPairingService/Lifecycle/shutdownhandler.cpp
+        MicaPairingService/Lifecycle/shutdownhandler.hpp
+        MicaPairingService/Network/pairingsocketclient.cpp
+        MicaPairingService/Network/pairingsocketclient.hpp
+        MicaPairingService/Network/receiveddevice.hpp
+        MicaPairingService/Terminal/terminallauncher.cpp
+        MicaPairingService/Terminal/terminallauncher.hpp
+        MicaPairingService/Tui/deviceselectiontui.cpp
+        MicaPairingService/Tui/deviceselectiontui.hpp
+        MicaPairingService/Tui/pairingconfirmationtui.cpp
+        MicaPairingService/Tui/pairingconfirmationtui.hpp
+)
 
 # Set O2 optimization for the release
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
@@ -32,18 +74,23 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
 # Set LTO if it's supported
 include(CheckIPOSupported)
 check_ipo_supported(RESULT lto_supported OUTPUT lto_error)
-if(lto_supported)
-    set_property(TARGET MicaListener PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-endif()
+if (lto_supported)
+    set_property(TARGET mica-listener PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif ()
 
 # Include Directories
-target_include_directories(MicaListener PUBLIC
-    ${AVAHI_CLIENT_INCLUDE_DIRS}
-    ${OPENAL_INCLUDE_DIRS}
+target_include_directories(mica-listener PUBLIC
+        ${AVAHI_CLIENT_INCLUDE_DIRS}
+        ${OPENAL_INCLUDE_DIRS}
+        ${LIBNOTIFY_INCLUDE_DIRS}
+        ${OPENSSL_INCLUDE_DIR}
 )
 
 # Link Libraries
-target_link_libraries(MicaListener PUBLIC
-    ${AVAHI_CLIENT_LIBRARIES}
-    ${OPENAL_LIBRARIES}
+target_link_libraries(mica-listener PUBLIC
+        ${AVAHI_CLIENT_LIBRARIES}
+        ${OPENAL_LIBRARIES}
+        ${LIBNOTIFY_LIBRARIES}
+        OpenSSL::SSL
+        OpenSSL::Crypto
 )

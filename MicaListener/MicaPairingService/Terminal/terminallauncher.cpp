@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2026 Adam Martula
+ * This source code is licensed under the MIT license found in the LICENSE file in the root of this source tree.
+ *
+ * Description: Implementation of terminal launcher helper to ensure MicaPairingService runs inside a visible terminal emulator.
+ */
+
+#include "terminallauncher.hpp"
+
+namespace MicaPairingService::Terminal
+{
+    void TerminalLauncher::EnsureTerminalWindow(const int argc, char *argv[])
+    {
+        // If already attached to a terminal, no action needed
+        if (isatty(STDIN_FILENO) && isatty(STDOUT_FILENO))
+        {
+            return;
+        }
+
+        const std::string exePath = std::filesystem::canonical(argv[0]).string();
+
+        std::vector<std::string> deviceArgs;
+        for (int i = 1; i < argc; ++i)
+        {
+            deviceArgs.emplace_back(argv[i]);
+        }
+
+        struct TermCandidate
+        {
+            std::string path;
+            std::vector<std::string> flags;
+        };
+
+        const std::vector<TermCandidate> candidates = {
+            {"/usr/bin/gnome-terminal", {"--wait", "--"}},
+            {"/usr/bin/ptyxis", {"--wait", "--"}},
+            {"/usr/bin/konsole", {"--nofork", "-e"}},
+            {"/usr/bin/x-terminal-emulator", {"-e"}},
+            {"/usr/bin/xterm", {"-e"}},
+            {"/usr/bin/alacritty", {"-e"}},
+            {"/usr/bin/kitty", {"-e"}}
+        };
+
+        for (const auto &cand : candidates)
+        {
+            if (std::filesystem::exists(cand.path))
+            {
+                std::vector<std::string> cmdStrings = {cand.path};
+                for (const auto &f : cand.flags)
+                {
+                    cmdStrings.push_back(f);
+                }
+                cmdStrings.push_back(exePath);
+                for (const auto &arg : deviceArgs)
+                {
+                    cmdStrings.push_back(arg);
+                }
+
+                std::vector<char *> cArgs;
+                for (auto &s : cmdStrings)
+                {
+                    cArgs.push_back(s.data());
+                }
+                cArgs.push_back(nullptr);
+
+                // Directly replace the current process image so MicaListener's waitpid stays bound to this window
+                execv(cand.path.c_str(), cArgs.data());
+            }
+        }
+        exit(10);
+    }
+}

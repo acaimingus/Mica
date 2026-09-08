@@ -13,19 +13,21 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
+
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
 import androidx.core.app.NotificationCompat;
+
 import java.io.IOException;
 import java.util.Arrays;
 
 import io.github.acaimingus.micaapp.R;
-import io.github.acaimingus.micaapp.activity.ConnectionCallbacks;
 import io.github.acaimingus.micaapp.activity.MainActivity;
-import io.github.acaimingus.micaapp.service.audio.AudioProcessor;
-import io.github.acaimingus.micaapp.service.audio.IAudioDataListener;
-import io.github.acaimingus.micaapp.service.audio.RecordingController;
-import io.github.acaimingus.micaapp.service.network.NsdController;
+import io.github.acaimingus.micaapp.audio.AudioProcessor;
+import io.github.acaimingus.micaapp.audio.IAudioDataListener;
+import io.github.acaimingus.micaapp.audio.RecordingController;
+import io.github.acaimingus.micaapp.network.ConnectionCallbacks;
+import io.github.acaimingus.micaapp.network.NsdController;
 
 /**
  * Foreground service responsible for recording audio from the microphone and transmitting
@@ -34,7 +36,7 @@ import io.github.acaimingus.micaapp.service.network.NsdController;
  * <p>The service creates a TCP server via {@link NsdController},
  * advertises itself over mDNS and continuously streams raw 16-bit PCM audio to any connected
  * client. Volume control and mute functionality are supported via
- * {@link io.github.acaimingus.micaapp.service.audio.AudioProcessor}.</p>
+ * {@link io.github.acaimingus.micaapp.audio.AudioProcessor}.</p>
  */
 public class MicrophoneService extends Service implements IAudioDataListener {
 
@@ -223,7 +225,7 @@ public class MicrophoneService extends Service implements IAudioDataListener {
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, notificationChannelId)
                 .setContentTitle("Mica Microphone")
-                .setContentText("Currently connected...")
+                .setContentText("Connecting...")
                 .setSmallIcon(R.drawable.mic_24px)
                 .setContentIntent(notificationIntent)
                 .setOngoing(true);
@@ -268,8 +270,34 @@ public class MicrophoneService extends Service implements IAudioDataListener {
         isRunning = false;
     }
 
+    public void confirmPairing() {
+        if (nsdController != null) {
+            nsdController.confirmPairing();
+        }
+    }
+
+    public void rejectPairing() {
+        if (nsdController != null) {
+            nsdController.rejectPairing();
+        }
+    }
+
+    public void updateNotification(String text) {
+        PendingIntent notificationIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), PendingIntent.FLAG_IMMUTABLE);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, notificationChannelId)
+                .setContentTitle("Mica Microphone")
+                .setContentText(text)
+                .setSmallIcon(R.drawable.mic_24px)
+                .setContentIntent(notificationIntent)
+                .setOngoing(true);
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        if (manager != null) {
+            manager.notify(1, builder.build());
+        }
+    }
+
     /**
-     * Called by {@link io.github.acaimingus.micaapp.service.audio.RecordingController} whenever
+     * Called by {@link io.github.acaimingus.micaapp.audio.RecordingController} whenever
      * a new chunk of microphone data is available.
      * If muted, writes silence to the network stream instead of real audio.
      * Otherwise, applies the current gain and writes the data to the network stream.
@@ -280,7 +308,7 @@ public class MicrophoneService extends Service implements IAudioDataListener {
      */
     @Override
     public void onAudioDataReceived(byte[] data, int bytesRead) {
-        if(nsdController.receiverStream != null) {
+        if (nsdController.receiverStream != null) {
             try {
                 if (isMuted) {
                     // Send zero array
@@ -299,6 +327,7 @@ public class MicrophoneService extends Service implements IAudioDataListener {
                     connectionCallbacks.onDisconnected();
                 }
                 nsdController.cleanupClientSocket();
+                updateNotification("Connecting...");
             }
         }
     }

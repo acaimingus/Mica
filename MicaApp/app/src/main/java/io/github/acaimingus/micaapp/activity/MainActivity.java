@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.view.View;
 import android.widget.Toast;
+
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,6 +22,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.divider.MaterialDivider;
 import com.google.android.material.slider.Slider;
@@ -32,6 +34,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.github.acaimingus.micaapp.R;
+import io.github.acaimingus.micaapp.network.ConnectionCallbacks;
+import io.github.acaimingus.micaapp.network.ConnectionStates;
+import io.github.acaimingus.micaapp.network.DeviceIdentification;
 import io.github.acaimingus.micaapp.service.LocalBinder;
 import io.github.acaimingus.micaapp.service.MicrophoneService;
 
@@ -62,6 +67,12 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
      * Material text view for the stats
      */
     private MaterialTextView statsText;
+
+    /**
+     * Material text view for displaying the device name
+     */
+    private MaterialTextView deviceNameText;
+
     /**
      * Material divider for the stats, gets toggled when stats are visible
      */
@@ -90,6 +101,11 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
      * ONLY SET THIS IN THE CONNECTION CALLBACKS TO PRESERVE THE SINGLE SOURCE OF TRUTH!
      */
     ConnectionStates currentConnectionState = ConnectionStates.DISCONNECTED;
+
+    /**
+     * AlertDialog for showing the pairing code when a connection gets initialized
+     */
+    private androidx.appcompat.app.AlertDialog pairingDialog;
 
     /**
      * Service connection that binds {@link MainActivity} to {@link MicrophoneService}.
@@ -122,8 +138,8 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
      * Method for constructing all necessary components when the activity is started.
      *
      * @param savedInstanceState If the activity is being re-initialized after
-     *     previously being shut down then this Bundle contains the data it most
-     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     *                           previously being shut down then this Bundle contains the data it most
+     *                           recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
      *
      */
     @Override
@@ -148,6 +164,8 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         gainText = findViewById(R.id.gainText);
         statsText = findViewById(R.id.statsText);
         statsDivider = findViewById(R.id.statsDivider);
+        deviceNameText = findViewById(R.id.deviceNameText);
+
 
         // Prefill the text for the gain
         gainText.setText(R.string.hundred_percent);
@@ -217,8 +235,8 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
     /**
      * Method for handling the result of the permission request.
      *
-     * @param requestCode The request code passed in {@link #requestPermissions}.
-     * @param permissions The requested permissions. Never null.
+     * @param requestCode  The request code passed in {@link #requestPermissions}.
+     * @param permissions  The requested permissions. Never null.
      * @param grantResults The grant results for the corresponding permissions which is either
      *                     {@link android.content.pm.PackageManager#PERMISSION_GRANTED} or
      *                     {@link android.content.pm.PackageManager#PERMISSION_DENIED}. Never null.
@@ -339,11 +357,23 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
                 unbindService(serviceConnection);
                 isServiceBound = false;
             }
-            // Reset the stats text to be cleared
+            // Reset the stats text and hide it
             statsText.setText("");
-            statsDivider.setVisibility(INVISIBLE);
+            toggleStatsVisibility(false);
             stopService(serviceIntent);
         });
+    }
+
+    private void toggleStatsVisibility(boolean toggle) {
+        if (toggle) {
+            statsText.setVisibility(VISIBLE);
+            deviceNameText.setVisibility(VISIBLE);
+            statsDivider.setVisibility(VISIBLE);
+        } else {
+            statsText.setVisibility(INVISIBLE);
+            deviceNameText.setVisibility(INVISIBLE);
+            statsDivider.setVisibility(INVISIBLE);
+        }
     }
 
     /**
@@ -362,6 +392,44 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         String stats = String.format(getString(R.string.rate_1f_kb_s_total_1f_mb), kbPerSecond, totalMb);
 
         statsText.setText(stats);
-        statsDivider.setVisibility(VISIBLE);
+        deviceNameText.setText(DeviceIdentification.getDeviceName(this));
+        toggleStatsVisibility(true);
+    }
+
+    @Override
+    public void onPairingRequested(String pin) {
+        runOnUiThread(() -> {
+            if (pairingDialog != null && pairingDialog.isShowing()) {
+                pairingDialog.dismiss();
+            }
+            pairingDialog = new androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Pairing Request")
+                    .setMessage("A device wants to pair.\nPlease confirm that the following code is displayed on the device:\n\n" + pin)
+                    .setPositiveButton("Allow", (dialog, which) -> {
+                        if (isServiceBound && microphoneService != null) {
+                            microphoneService.confirmPairing();
+                        }
+                    })
+                    .setNegativeButton("Deny", (dialog, which) -> {
+                        if (isServiceBound && microphoneService != null) {
+                            microphoneService.rejectPairing();
+                        }
+                    })
+                    .setCancelable(false)
+                    .create();
+            pairingDialog.show();
+        });
+    }
+
+    @Override
+    public void onPairingRejected() {
+        runOnUiThread(() -> {
+            if (pairingDialog != null && pairingDialog.isShowing()) {
+                pairingDialog.dismiss();
+                pairingDialog = null;
+                // Show a toast that pairing was rejected
+                android.widget.Toast.makeText(this, "Pairing cancelled by the other device.", android.widget.Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }
