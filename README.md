@@ -123,6 +123,12 @@ For developing the Android Client only Android Studio and the Android SDK are re
 
 For packaging source code, there is an instruction under `Packaging/PACKAGING.md`.
 
+## Coding guidelines
+
+### C++
+
+The code aims to conform with the [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines) (Although it is not there yet 100%). The project also uses the Microsoft style in .clang-format in the C++ root folder. Use that to format the code and for the rest: if in doubt, reference the [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines).
+
 ## Contributing
 
 Contributions are welcome and greatly appreciated! If you find a bug or have a feature you would like to add, feel free to open an issue or submit a pull request. To contribute:
