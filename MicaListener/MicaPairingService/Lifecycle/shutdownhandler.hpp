@@ -16,14 +16,14 @@
 
 namespace MicaPairingService::Lifecycle
 {
-    class ShutdownHandler
-    {
-    public:
-        /// @brief Method for handling requested shutdown or terminal closure signals
-        /// @param signal The signal sent by the OS
-        static void HandleShutdown([[maybe_unused]] int signal);
+class ShutdownHandler
+{
+  public:
+    /// @brief Method for handling requested shutdown or terminal closure signals
+    /// @param signal The signal sent by the OS
+    static void HandleShutdown([[maybe_unused]] int signal);
 
-        /// @brief Sets up signal handlers for terminal close (SIGHUP), Ctrl+C (SIGINT), and kill (SIGTERM)
-        static void Setup();
-    };
-}
+    /// @brief Sets up signal handlers for terminal close (SIGHUP), Ctrl+C (SIGINT), and kill (SIGTERM)
+    static void Setup();
+};
+} // namespace MicaPairingService::Lifecycle

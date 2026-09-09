@@ -16,12 +16,12 @@
 
 namespace MicaPairingService::Tui
 {
-    /// @brief Terminal UI component for displaying device information and prompting for pairing confirmation
-    class PairingConfirmationTui
-    {
-    public:
-        /// @brief Displays the pairing confirmation dialog in the terminal for the given device
-        /// @param deviceToPair The received device requesting to be paired
-        static void ShowPairingConfirmationTui(const Network::ReceivedDevice &deviceToPair);
-    };
-}
+/// @brief Terminal UI component for displaying device information and prompting for pairing confirmation
+class PairingConfirmationTui
+{
+  public:
+    /// @brief Displays the pairing confirmation dialog in the terminal for the given device
+    /// @param deviceToPair The received device requesting to be paired
+    static void ShowPairingConfirmationTui(const Network::ReceivedDevice &deviceToPair);
+};
+} // namespace MicaPairingService::Tui

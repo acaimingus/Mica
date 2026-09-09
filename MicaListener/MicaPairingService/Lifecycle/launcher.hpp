@@ -7,32 +7,32 @@
 
 #pragma once
 
-#include <vector>
-#include <string>
 #include <iostream>
+#include <string>
+#include <vector>
 
-#include "../Network/receiveddevice.hpp"
 #include "../Network/pairingsocketclient.hpp"
-#include "../Tui/pairingconfirmationtui.hpp"
-#include "../Tui/deviceselectiontui.hpp"
+#include "../Network/receiveddevice.hpp"
 #include "../Terminal/terminallauncher.hpp"
+#include "../Tui/deviceselectiontui.hpp"
+#include "../Tui/pairingconfirmationtui.hpp"
 
 namespace MicaPairingService::Lifecycle
 {
-    /// @brief Main launcher class for the MicaPairingService
-    class Launcher
-    {
-    public:
-        /// @brief Handles device selection either automatically or via TUI
-        /// @param argc Command-line argument count
-        /// @param argv Command-line argument strings
-        static void HandleDeviceSelection(int argc, char* argv[]);
+/// @brief Main launcher class for the MicaPairingService
+class Launcher
+{
+  public:
+    /// @brief Handles device selection either automatically or via TUI
+    /// @param argc Command-line argument count
+    /// @param argv Command-line argument strings
+    static void HandleDeviceSelection(int argc, char *argv[]);
 
-    private:
-        /// @brief Parses device configurations from command-line arguments (passed as triplets of Name, IP, Port)
-        /// @param argc Command-line argument count
-        /// @param argv Command-line argument strings
-        /// @return Vector of parsed ReceivedDevice objects
-        static std::vector<Network::ReceivedDevice> ParseCommandLineArgs(int argc, char *argv[]);
-    };
-}
+  private:
+    /// @brief Parses device configurations from command-line arguments (passed as triplets of Name, IP, Port)
+    /// @param argc Command-line argument count
+    /// @param argv Command-line argument strings
+    /// @return Vector of parsed ReceivedDevice objects
+    static std::vector<Network::ReceivedDevice> ParseCommandLineArgs(int argc, char *argv[]);
+};
+} // namespace MicaPairingService::Lifecycle

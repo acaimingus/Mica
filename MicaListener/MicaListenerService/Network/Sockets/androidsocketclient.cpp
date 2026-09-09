@@ -9,149 +9,152 @@
 
 namespace MicaListener::MicaListenerService::Network::Sockets
 {
-    AndroidSocketClient::AndroidSocketClient(const NetworkConfig &_config)
+AndroidSocketClient::AndroidSocketClient(const NetworkConfig &_config)
+{
+    // Create the socket by type
+    // AF_INET = IPv4, SOCK_STREAM = TCP, 0 = IP
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock == -1)
     {
-        // Create the socket by type
-        // AF_INET = IPv4, SOCK_STREAM = TCP, 0 = IP
-        sock = socket(AF_INET, SOCK_STREAM, 0);
-        if (sock == -1)
-        {
-            throw std::runtime_error("Could not create socket: " + std::string(std::strerror(errno)));
-        }
-
-        // Set 1s timeout
-        timeval tv{};
-        tv.tv_sec = 1;
-        tv.tv_usec = 0;
-        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char *) &tv, sizeof(tv));
-
-        // Prepare the IP address
-        sockaddr_in server{};
-        server.sin_family = AF_INET;
-        // Change port to network byte order (Endianness)
-        server.sin_port = htons(_config.GetPort());
-
-        // Change IP address from string to binary form
-        if (inet_pton(AF_INET, _config.GetIp().c_str(), &server.sin_addr) <= 0)
-        {
-            close(sock);
-            throw std::runtime_error("Invalid address / Address not supported: " + _config.GetIp());
-        }
-
-        // Connect
-        std::clog << logName << "Connecting to " << _config.GetIp() << ":" << _config.GetPort() << "..." <<
-                std::endl;
-        if (connect(sock, reinterpret_cast<struct sockaddr *>(&server), sizeof(server)) < 0)
-        {
-            const std::string errorMsg = strerror(errno);
-            // Clean up before throwing exception!
-            close(sock);
-            throw std::runtime_error("Connection failed: " + errorMsg);
-        }
-
-        // Authenticate connection
-        const std::vector<uint8_t> secret = _config.GetSharedSecret();
-        if (!secret.empty())
-        {
-            auto token = Cryptography::EcdhKeyExchange::GenerateAuthToken(secret);
-            std::vector<uint8_t> req(1 + token.size());
-            req[0] = 0x02; // STREAM_REQ
-            std::ranges::copy(token, req.begin() + 1);
-
-            if (write(sock, req.data(), req.size()) != static_cast<ssize_t>(req.size()))
-            {
-                close(sock);
-                throw std::runtime_error("Failed to send auth token");
-            }
-        } else {
-            // For backwards compatibility or if pairing is skipped somehow
-            uint8_t req[1] = { 0x02 };
-            write(sock, req, 1);
-        }
-
-        std::clog << logName << "Connected and authenticated!" << std::endl;
+        throw std::runtime_error("Could not create socket: " + std::string(std::strerror(errno)));
     }
 
-    AndroidSocketClient::~AndroidSocketClient()
+    // Set 1s timeout
+    timeval tv{};
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv, sizeof(tv));
+
+    // Prepare the IP address
+    sockaddr_in server{};
+    server.sin_family = AF_INET;
+    // Change port to network byte order (Endianness)
+    server.sin_port = htons(_config.GetPort());
+
+    // Change IP address from string to binary form
+    if (inet_pton(AF_INET, _config.GetIp().c_str(), &server.sin_addr) <= 0)
     {
-        // Close the socket if it wasn't already
-        if (sock != -1)
+        close(sock);
+        throw std::runtime_error("Invalid address / Address not supported: " + _config.GetIp());
+    }
+
+    // Connect
+    std::clog << logName << "Connecting to " << _config.GetIp() << ":" << _config.GetPort() << "..." << std::endl;
+    if (connect(sock, reinterpret_cast<struct sockaddr *>(&server), sizeof(server)) < 0)
+    {
+        const std::string errorMsg = strerror(errno);
+        // Clean up before throwing exception!
+        close(sock);
+        throw std::runtime_error("Connection failed: " + errorMsg);
+    }
+
+    // Authenticate connection
+    const std::vector<uint8_t> secret = _config.GetSharedSecret();
+    if (!secret.empty())
+    {
+        auto token = Cryptography::EcdhKeyExchange::GenerateAuthToken(secret);
+        std::vector<uint8_t> req(1 + token.size());
+        req[0] = 0x02; // STREAM_REQ
+        std::ranges::copy(token, req.begin() + 1);
+
+        if (write(sock, req.data(), req.size()) != static_cast<ssize_t>(req.size()))
         {
-            std::clog << logName << "Closing socket..." << std::endl;
             close(sock);
+            throw std::runtime_error("Failed to send auth token");
         }
     }
-
-    ssize_t AndroidSocketClient::Read(std::vector<uint8_t> &_buffer) const
+    else
     {
-        // Try reading data from the socket
-        const ssize_t bytesRead = recv(sock, _buffer.data(), _buffer.size(), 0);
-
-        // 0 bytes = Server closed connection
-        if (bytesRead == 0)
-        {
-            std::clog << logName << "Server closed connection." << std::endl;
-        } else if (bytesRead < 0)
-        {
-            // There was an error, check if it was a timeout
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-            {
-                // There was a timeout, no need to act
-                return -1;
-            }
-            // An actual error happened
-            std::cerr << logName << "Read error: " << strerror(errno) << std::endl;
-        }
-        return bytesRead;
+        // For backwards compatibility or if pairing is skipped somehow
+        uint8_t req[1] = {0x02};
+        write(sock, req, 1);
     }
 
-    void AndroidSocketClient::ConnectToService(const Network::NetworkConfig &_config)
+    std::clog << logName << "Connected and authenticated!" << std::endl;
+}
+
+AndroidSocketClient::~AndroidSocketClient()
+{
+    // Close the socket if it wasn't already
+    if (sock != -1)
     {
-        try
-        {
-            const Audio::SinkManager sinkManager;
-            Audio::AudioPlayer audioPlayer;
-            // I don't know why this device is named Mica and I cannot figure it out
-            // But it works, so I guess that's fine?
-            audioPlayer.Initialize("Mica");
-            std::clog << logName << "Audio player is set up!" << std::endl;
-
-            const AndroidSocketClient socketClient(_config);
-
-            // Notify the desktop that the connection was successful
-            Notification::NotificationManager::RequestDesktopConnectedNotification();
-            
-            constexpr int bufferSize = 4096 * 2;
-            std::vector<uint8_t> buffer(bufferSize);
-
-            while (!Lifecycle::ShutdownHandler::ShouldShutdown())
-            {
-                const ssize_t bytesRead = socketClient.Read(buffer);
-                // There is an error or a timeout
-                if (bytesRead < 0)
-                {
-                    // Check if there is a timeout
-                    if (errno == EAGAIN || errno == EWOULDBLOCK)
-                    {
-                        continue;
-                    }
-                    // Exit loop on error
-                    break;
-                }
-                // The connection was closed
-                if (bytesRead == 0)
-                {
-                    std::clog << logName << "Connection lost." << std::endl;
-                    break;
-                }
-
-                // Data was received
-                std::vector<uint8_t> chunk(buffer.begin(), buffer.begin() + bytesRead);
-                audioPlayer.PlayBuffer(chunk);
-            }
-        } catch (const std::runtime_error &error)
-        {
-            std::cerr << logName << "Connection error: " << error.what() << std::endl;
-        }
+        std::clog << logName << "Closing socket..." << std::endl;
+        close(sock);
     }
 }
+
+ssize_t AndroidSocketClient::Read(std::vector<uint8_t> &_buffer) const
+{
+    // Try reading data from the socket
+    const ssize_t bytesRead = recv(sock, _buffer.data(), _buffer.size(), 0);
+
+    // 0 bytes = Server closed connection
+    if (bytesRead == 0)
+    {
+        std::clog << logName << "Server closed connection." << std::endl;
+    }
+    else if (bytesRead < 0)
+    {
+        // There was an error, check if it was a timeout
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+        {
+            // There was a timeout, no need to act
+            return -1;
+        }
+        // An actual error happened
+        std::cerr << logName << "Read error: " << strerror(errno) << std::endl;
+    }
+    return bytesRead;
+}
+
+void AndroidSocketClient::ConnectToService(const Network::NetworkConfig &_config)
+{
+    try
+    {
+        const Audio::SinkManager sinkManager;
+        Audio::AudioPlayer audioPlayer;
+        // I don't know why this device is named Mica and I cannot figure it out
+        // But it works, so I guess that's fine?
+        audioPlayer.Initialize("Mica");
+        std::clog << logName << "Audio player is set up!" << std::endl;
+
+        const AndroidSocketClient socketClient(_config);
+
+        // Notify the desktop that the connection was successful
+        Notification::NotificationManager::RequestDesktopConnectedNotification();
+
+        constexpr int bufferSize = 4096 * 2;
+        std::vector<uint8_t> buffer(bufferSize);
+
+        while (!Lifecycle::ShutdownHandler::ShouldShutdown())
+        {
+            const ssize_t bytesRead = socketClient.Read(buffer);
+            // There is an error or a timeout
+            if (bytesRead < 0)
+            {
+                // Check if there is a timeout
+                if (errno == EAGAIN || errno == EWOULDBLOCK)
+                {
+                    continue;
+                }
+                // Exit loop on error
+                break;
+            }
+            // The connection was closed
+            if (bytesRead == 0)
+            {
+                std::clog << logName << "Connection lost." << std::endl;
+                break;
+            }
+
+            // Data was received
+            std::vector<uint8_t> chunk(buffer.begin(), buffer.begin() + bytesRead);
+            audioPlayer.PlayBuffer(chunk);
+        }
+    }
+    catch (const std::runtime_error &error)
+    {
+        std::cerr << logName << "Connection error: " << error.what() << std::endl;
+    }
+}
+} // namespace MicaListener::MicaListenerService::Network::Sockets

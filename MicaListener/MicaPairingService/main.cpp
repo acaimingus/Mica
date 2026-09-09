@@ -5,10 +5,10 @@
  * Description: Main entry point of the pairing service when executed.
  */
 
-#include "Lifecycle/shutdownhandler.hpp"
 #include "Lifecycle/launcher.hpp"
+#include "Lifecycle/shutdownhandler.hpp"
 
-int main(const int argc, char* argv[])
+int main(const int argc, char *argv[])
 {
     MicaPairingService::Lifecycle::ShutdownHandler::Setup();
     MicaPairingService::Lifecycle::Launcher::HandleDeviceSelection(argc, argv);

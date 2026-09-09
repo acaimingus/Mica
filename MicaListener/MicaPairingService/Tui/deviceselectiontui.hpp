@@ -16,17 +16,17 @@
 
 namespace MicaPairingService::Tui
 {
-    /// @brief Terminal UI component for displaying multiple discovered devices and letting the user select one
-    class DeviceSelectionTui
-    {
-    public:
-        /// @brief Prompts user to select a device from a list and triggers confirmation for that device
-        /// @param devices Vector of discovered devices
-        static void ShowDeviceSelectionTui(const std::vector<Network::ReceivedDevice>& devices);
+/// @brief Terminal UI component for displaying multiple discovered devices and letting the user select one
+class DeviceSelectionTui
+{
+  public:
+    /// @brief Prompts user to select a device from a list and triggers confirmation for that device
+    /// @param devices Vector of discovered devices
+    static void ShowDeviceSelectionTui(const std::vector<Network::ReceivedDevice> &devices);
 
-    private:
-        /// @brief Prints formatted numbered list of discovered devices to stdout
-        /// @param devices Vector of discovered devices
-        static void PrintListOfDevices(const std::vector<Network::ReceivedDevice>& devices);
-    };
-}
+  private:
+    /// @brief Prints formatted numbered list of discovered devices to stdout
+    /// @param devices Vector of discovered devices
+    static void PrintListOfDevices(const std::vector<Network::ReceivedDevice> &devices);
+};
+} // namespace MicaPairingService::Tui

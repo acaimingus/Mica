@@ -11,69 +11,69 @@
 
 namespace MicaListener::MicaListenerService::Network
 {
-    bool DeviceRegistry::AddOrUpdateDevice(const std::string &name, const std::string &ip, uint16_t port)
+bool DeviceRegistry::AddOrUpdateDevice(const std::string &name, const std::string &ip, uint16_t port)
+{
+    std::lock_guard<std::mutex> lock(registryMutex);
+
+    NetworkConfig newConfig(ip, port, name, std::chrono::steady_clock::now());
+
+    auto [it, inserted] = devices.insert_or_assign(name, newConfig);
+
+    if (!inserted)
     {
-        std::lock_guard<std::mutex> lock(registryMutex);
-
-        NetworkConfig newConfig(ip, port, name, std::chrono::steady_clock::now());
-
-        auto [it, inserted] = devices.insert_or_assign(name, newConfig);
-
-        if (!inserted)
-        {
-            // Updated existing device
-            return false;
-        }
-
-        if (onDeviceAdded)
-        {
-            onDeviceAdded(newConfig);
-        }
-
-        // Added brand new device
-        return true;
+        // Updated existing device
+        return false;
     }
 
-    bool DeviceRegistry::RemoveDevice(const std::string &name)
+    if (onDeviceAdded)
     {
-        std::lock_guard<std::mutex> lock(registryMutex);
-        blacklistedDevices.erase(name);
-        return devices.erase(name) > 0;
+        onDeviceAdded(newConfig);
     }
 
-    std::vector<NetworkConfig> DeviceRegistry::GetActiveDevices() const
-    {
-        std::lock_guard<std::mutex> lock(registryMutex);
-        std::vector<NetworkConfig> result;
-        result.reserve(devices.size());
-
-        for (const auto &[name, config] : devices)
-        {
-            if (blacklistedDevices.find(name) == blacklistedDevices.end())
-            {
-                result.push_back(config);
-            }
-        }
-
-        return result;
-    }
-
-    void DeviceRegistry::Clear()
-    {
-        std::lock_guard<std::mutex> lock(registryMutex);
-        devices.clear();
-        blacklistedDevices.clear();
-    }
-
-    void DeviceRegistry::SetOnDeviceAdded(DeviceAddedCallback callback)
-    {
-        std::lock_guard<std::mutex> lock(registryMutex);
-        onDeviceAdded = std::move(callback);
-    }
-
-    void DeviceRegistry::BlacklistDevice(const std::string &name)
-    {
-        std::lock_guard<std::mutex> lock(registryMutex);
-        blacklistedDevices.insert(name);
-    }
+    // Added brand new device
+    return true;
 }
+
+bool DeviceRegistry::RemoveDevice(const std::string &name)
+{
+    std::lock_guard<std::mutex> lock(registryMutex);
+    blacklistedDevices.erase(name);
+    return devices.erase(name) > 0;
+}
+
+std::vector<NetworkConfig> DeviceRegistry::GetActiveDevices() const
+{
+    std::lock_guard<std::mutex> lock(registryMutex);
+    std::vector<NetworkConfig> result;
+    result.reserve(devices.size());
+
+    for (const auto &[name, config] : devices)
+    {
+        if (blacklistedDevices.find(name) == blacklistedDevices.end())
+        {
+            result.push_back(config);
+        }
+    }
+
+    return result;
+}
+
+void DeviceRegistry::Clear()
+{
+    std::lock_guard<std::mutex> lock(registryMutex);
+    devices.clear();
+    blacklistedDevices.clear();
+}
+
+void DeviceRegistry::SetOnDeviceAdded(DeviceAddedCallback callback)
+{
+    std::lock_guard<std::mutex> lock(registryMutex);
+    onDeviceAdded = std::move(callback);
+}
+
+void DeviceRegistry::BlacklistDevice(const std::string &name)
+{
+    std::lock_guard<std::mutex> lock(registryMutex);
+    blacklistedDevices.insert(name);
+}
+} // namespace MicaListener::MicaListenerService::Network
