@@ -14,24 +14,24 @@
 
 namespace MicaListener::MicaListenerService::Lifecycle
 {
-    class ShutdownHandler
-    {
-    public:
-        /// @brief Method for handling the requested shutdown by the system
-        /// @param signal The signal sent by the OS
-        static void HandleShutdown(int signal);
+class ShutdownHandler
+{
+  public:
+    /// @brief Method for handling the requested shutdown by the system
+    /// @param signal The signal sent by the OS
+    static void HandleShutdown(int signal);
 
-        /// @brief Setup method for the Shutdown Handler
-        static void Setup();
+    /// @brief Setup method for the Shutdown Handler
+    static void Setup();
 
-        /// @brief Small helper method for returning the value if the program should shut down
-        static bool ShouldShutdown();
+    /// @brief Small helper method for returning the value if the program should shut down
+    static bool ShouldShutdown();
 
-    private:
-        /// @brief Log prefix for the Shutdown Handler
-        static inline const std::string logName = "\033[37mSHUTDOWN\033[0m\t";
+  private:
+    /// @brief Log prefix for the Shutdown Handler
+    static inline const std::string logName = "\033[37mSHUTDOWN\033[0m\t";
 
-        /// @brief Atomic bool for storing if the program should shut down
-        static inline std::atomic<bool> shouldShutdown{false};
-    };
-}
+    /// @brief Atomic bool for storing if the program should shut down
+    static inline std::atomic<bool> shouldShutdown{false};
+};
+} // namespace MicaListener::MicaListenerService::Lifecycle

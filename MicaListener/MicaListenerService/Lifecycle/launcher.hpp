@@ -14,30 +14,30 @@
 #include <thread>
 #include <vector>
 
-#include "shutdownhandler.hpp"
+#include "../Network/Sockets/androidsocketclient.hpp"
 #include "../Network/deviceregistry.hpp"
 #include "../Network/servicediscovery.hpp"
-#include "../Network/Sockets/androidsocketclient.hpp"
-#include "../Pairing/pairingmanager.hpp"
 #include "../Notification/notificationmanager.hpp"
+#include "../Pairing/pairingmanager.hpp"
+#include "shutdownhandler.hpp"
 
 namespace MicaListener::MicaListenerService::Lifecycle
 {
-    /// @brief Main launcher class that drives the service discovery and audio streaming loop
-    class Launcher
-    {
-    public:
-        /// @brief The device registry for storing found devices from the Avahi service discovery
-        inline static Network::DeviceRegistry deviceRegistry;
+/// @brief Main launcher class that drives the service discovery and audio streaming loop
+class Launcher
+{
+  public:
+    /// @brief The device registry for storing found devices from the Avahi service discovery
+    inline static Network::DeviceRegistry deviceRegistry;
 
-        /// @brief Runs the main program loop: repeatedly discovers the Mica service and
-        ///        streams audio until a shutdown is requested
-        static void Launch();
+    /// @brief Runs the main program loop: repeatedly discovers the Mica service and
+    ///        streams audio until a shutdown is requested
+    static void Launch();
 
-    private:
-        /// @brief Log prefix for the main launcher
-        static constexpr std::string logName = "\033[33mMAIN\033[0m\t\t";
-        /// @brief The name of the service to look for
-        static constexpr std::string serviceName = "_micaapp._tcp";
-    };
-}
+  private:
+    /// @brief Log prefix for the main launcher
+    static constexpr std::string logName = "\033[33mMAIN\033[0m\t\t";
+    /// @brief The name of the service to look for
+    static constexpr std::string serviceName = "_micaapp._tcp";
+};
+} // namespace MicaListener::MicaListenerService::Lifecycle
