@@ -7,7 +7,7 @@ public interface IAudioDataListener {
     /**
      * Handler method for the data received from the microphone.
      *
-     * @param data data of the received message
+     * @param data      data of the received message
      * @param bytesRead length of the received message
      */
     void onAudioDataReceived(byte[] data, int bytesRead);
