@@ -14,41 +14,40 @@
 
 namespace MicaPairingService::Network
 {
-    /// @brief Lightweight Data Transfer Object (DTO) for discovered network devices
-    class ReceivedDevice
+/// @brief Lightweight Data Transfer Object (DTO) for discovered network devices
+class ReceivedDevice
+{
+  public:
+    /// @brief Constructor for ReceivedDevice
+    /// @param _ip IP address of the device
+    /// @param _port Port of the device
+    /// @param _deviceName Name of the device
+    ReceivedDevice(std::string _ip, const int _port, std::string _deviceName)
+        : deviceName(std::move(_deviceName)), deviceIp(std::move(_ip)), devicePort(_port)
     {
-    public:
-        /// @brief Constructor for ReceivedDevice
-        /// @param _ip IP address of the device
-        /// @param _port Port of the device
-        /// @param _deviceName Name of the device
-        ReceivedDevice(std::string _ip, const int _port, std::string _deviceName)
-            : deviceName(std::move(_deviceName)), deviceIp(std::move(_ip)), devicePort(_port)
-        {
-        }
+    }
 
-        /// @brief Public getter for the IP variable
-        [[nodiscard]] std::string GetIp() const
-        {
-            return deviceIp;
-        }
+    /// @brief Public getter for the IP variable
+    [[nodiscard]] std::string GetIp() const
+    {
+        return deviceIp;
+    }
 
-        /// @brief Public getter for the port variable
-        [[nodiscard]] int GetPort() const
-        {
-            return devicePort;
-        }
+    /// @brief Public getter for the port variable
+    [[nodiscard]] int GetPort() const
+    {
+        return devicePort;
+    }
 
-        /// @brief Public getter for the device name
-        [[nodiscard]] std::string GetDeviceName() const
-        {
-            return deviceName;
-        }
+    /// @brief Public getter for the device name
+    [[nodiscard]] std::string GetDeviceName() const
+    {
+        return deviceName;
+    }
 
-    private:
-        std::string deviceName;
-        std::string deviceIp;
-        int devicePort;
-    };
-}
-
+  private:
+    std::string deviceName;
+    std::string deviceIp;
+    int devicePort;
+};
+} // namespace MicaPairingService::Network

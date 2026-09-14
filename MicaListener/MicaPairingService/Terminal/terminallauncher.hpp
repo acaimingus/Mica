@@ -7,24 +7,24 @@
 
 #pragma once
 
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <string>
-#include <vector>
-#include <unistd.h>
 #include <sys/wait.h>
-#include <cstdlib>
+#include <unistd.h>
+#include <vector>
 
 namespace MicaPairingService::Terminal
 {
-    /// @brief Helper class to ensure MicaPairingService runs inside an interactive, visible terminal window
-    class TerminalLauncher
-    {
-    public:
-        /// @brief Ensures the process is running in an interactive TTY window.
-        ///        If not, spawns an available terminal emulator running this executable and exits the background parent.
-        /// @param argc Command line argument count
-        /// @param argv Command line argument values
-        static void EnsureTerminalWindow(int argc, char *argv[]);
-    };
-}
+/// @brief Helper class to ensure MicaPairingService runs inside an interactive, visible terminal window
+class TerminalLauncher
+{
+  public:
+    /// @brief Ensures the process is running in an interactive TTY window.
+    ///        If not, spawns an available terminal emulator running this executable and exits the background parent.
+    /// @param argc Command line argument count
+    /// @param argv Command line argument values
+    static void EnsureTerminalWindow(int argc, char *argv[]);
+};
+} // namespace MicaPairingService::Terminal

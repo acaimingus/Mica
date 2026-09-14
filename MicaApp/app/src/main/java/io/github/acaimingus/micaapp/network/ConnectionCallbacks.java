@@ -31,6 +31,7 @@ public interface ConnectionCallbacks {
 
     /**
      * Called when a pairing request is received.
+     *
      * @param pin The 6-digit PIN to display to the user.
      */
     void onPairingRequested(String pin);

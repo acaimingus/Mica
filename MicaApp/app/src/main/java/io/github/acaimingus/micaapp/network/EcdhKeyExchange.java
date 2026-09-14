@@ -1,6 +1,7 @@
 package io.github.acaimingus.micaapp.network;
 
-import java.security.InvalidAlgorithmParameterException;
+import android.util.Log;
+
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -10,10 +11,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+
 import javax.crypto.KeyAgreement;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import android.util.Log;
 
 public class EcdhKeyExchange {
     private static final String TAG = "EcdhKeyExchange";
@@ -63,7 +64,7 @@ public class EcdhKeyExchange {
             KeyAgreement keyAgreement = KeyAgreement.getInstance("X25519");
             keyAgreement.init(keyPair.getPrivate());
             keyAgreement.doPhase(peerPublicKey, true);
-            
+
             return keyAgreement.generateSecret();
         } catch (NoSuchAlgorithmException | InvalidKeySpecException | InvalidKeyException e) {
             Log.e(TAG, "Failed to compute shared secret", e);
@@ -80,16 +81,16 @@ public class EcdhKeyExchange {
             byte[] hash = digest.digest(secret);
 
             long val = ((hash[0] & 0xFFL) << 24) |
-                       ((hash[1] & 0xFFL) << 16) |
-                       ((hash[2] & 0xFFL) << 8) |
-                       (hash[3] & 0xFFL);
+                    ((hash[1] & 0xFFL) << 16) |
+                    ((hash[2] & 0xFFL) << 8) |
+                    (hash[3] & 0xFFL);
             long pin = val % 1000000;
 
-            String pinStr = String.valueOf(pin);
+            StringBuilder pinStr = new StringBuilder(String.valueOf(pin));
             while (pinStr.length() < 6) {
-                pinStr = "0" + pinStr;
+                pinStr.insert(0, "0");
             }
-            return pinStr;
+            return pinStr.toString();
         } catch (NoSuchAlgorithmException e) {
             Log.e(TAG, "SHA-256 not supported", e);
             return "000000";

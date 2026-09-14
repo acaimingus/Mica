@@ -32,9 +32,9 @@ public class AudioProcessor {
         }
 
         // 2 steps because we are working with 16 bit
-        for (int i = 0; i < bytesRead; i+= 2) {
+        for (int i = 0; i < bytesRead; i += 2) {
             // Combine 2 bytes to a 16 bit integer
-            int audioSample = (data[i] & 0xFF) | (data[i+1] << 8);
+            int audioSample = (data[i] & 0xFF) | (data[i + 1] << 8);
             // Apply gain, apply our factor and divide by 4096
             int newSample = (audioSample * gainFixed) >> 12;
             // Prevent clipping by bounding the values
@@ -45,7 +45,7 @@ public class AudioProcessor {
             }
             // Put the result back in the array
             data[i] = (byte) newSample;
-            data[i+1] = (byte) (newSample >> 8);
+            data[i + 1] = (byte) (newSample >> 8);
         }
     }
 }
