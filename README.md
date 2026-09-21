@@ -16,6 +16,8 @@ The following components are required on your Linux PC. Most mainstream distribu
 
 - [**Avahi**](https://avahi.org/) – Zeroconf DNS service discovery
 - [**PulseAudio or PipeWire**](https://wiki.debian.org/PulseAudio) – Virtual audio device management
+- [**OpenSSL**](https://www.openssl.org/) – Cryptographic key exchange for secure pairing
+- [**libnotify**](https://gitlab.gnome.org/GNOME/libnotify) – Desktop notifications for pairing requests
 - [**Systemd**](https://systemd.io/) – Automatic service startup (optional; manual configuration needed for other init systems)
 
 ## Installation
@@ -109,12 +111,14 @@ build-essential
 pkg-config
 libavahi-client-dev
 libopenal-dev
+libssl-dev
+libnotify-dev
 ```
 
 They can be installed with:
 
 ```bash
-sudo apt install cmake ninja-build build-essential pkg-config libavahi-client-dev libopenal-dev
+sudo apt install cmake ninja-build build-essential pkg-config libavahi-client-dev libopenal-dev libssl-dev libnotify-dev
 ```
 
 On other systems additional dependencies may be needed.
