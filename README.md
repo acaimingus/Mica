@@ -78,16 +78,6 @@ Once installed, connecting your phone to your PC is straightforward:
 
 <img src="Documentation/1.png" width="200" alt="Application screenshot">
 
-## Performance
-
-The listener is architected for minimal resource consumption (Measured on a system with a Ryzen 7 5700X and 16GB RAM):
-
-| Resource | Usage |
-|----------|-------|
-| **CPU** | ~0.3% of a single core (active) |
-| **RAM** | ~5MB active, ~1MB idle |
-| **Storage** | ~100KB |
-
 ## Troubleshooting
 
 ### IP Address Caching Issues
