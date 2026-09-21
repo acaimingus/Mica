@@ -73,10 +73,9 @@ Once installed, connecting your phone to your PC is straightforward:
 
 - Connect your phone to your PC via USB cable
 - Enable USB Tethering in your Android settings
+- Turn off your Wi-Fi
 - Open the Mica app and toggle the connection switch
 - The app automatically routes audio through the USB connection
-
-<img src="Documentation/1.png" width="200" alt="Application screenshot">
 
 ## Troubleshooting
 
