@@ -28,9 +28,9 @@ A Debian package essentially mirrors the directory structure of the target syste
 
 As the first step, the package information should be adjusted. This is done in the file `DEBIAN/control`. Please adjust the version number to match the GitHub version. Feel free to add yourself to the list of maintainers if you wish. Verify if the dependencies are still correct and adjust them if that is not the case.
 
-#### Preparing the executable
+#### Preparing the executables
 
-Compile the C++ project under `../../MicaListener` using CMake. It will generate an executable file called `MicaListener`. Copy that file into `usr/bin/` (**in the packaging directory, not your `/usr/bin`!!!**). Doing this will make the apt package manager install the MicaListener executable under `/usr/bin/`, which in turn means that MicaListener will be in PATH and available through the terminal. Make sure to delete the `dummy.txt` file in the directory, it is only there so git keeps the folder structure.
+Compile the C++ project under `../../MicaListener` using CMake. It will generate two executable files: `mica-listener` and `mica-pairing`. Copy both of these files into `usr/bin/` (**in the packaging directory, not your system's `/usr/bin`!!!**). Doing this will make the apt package manager install both executables under `/usr/bin/`, which in turn means they will be in PATH and available through the terminal (the listener needs to be able to launch the pairing dialog from the same directory). Make sure to delete the `dummy.txt` file in the directory, it is only there so git keeps the folder structure.
 
 #### File permissions
 
@@ -74,9 +74,9 @@ sudo apt remove micalistener
 
 If there is no packaging system available or the user does not wish to use one, then it is also possible to set up the listener manually in a few steps.
 
-#### Copying the listener executable
+#### Copying the executables
 
-Compile the C++ project under `../../MicaListener` using CMake. It will generate an executable file called `MicaListener`. Copy that file into your `/usr/bin/` folder to have the executable in your path or into a folder of your choosing. Make sure to add that folder to PATH then.
+Compile the C++ project under `../../MicaListener` using CMake. It will generate two executable files: `mica-listener` and `mica-pairing`. Copy both files into your `/usr/bin/` folder to have them in your path, or into a folder of your choosing. If using a custom folder, make sure to add it to PATH so the listener can correctly spawn the pairing application.
 
 #### Setting up the systemd service
 
