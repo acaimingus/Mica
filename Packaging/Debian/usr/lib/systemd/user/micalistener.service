@@ -3,7 +3,7 @@ Description=Mica Listener
 After=network.target sound.target
 
 [Service]
-ExecStart=/usr/bin/MicaListener
+ExecStart=/usr/bin/mica-listener
 Restart=on-failure
 RestartSec=5
 

@@ -16,6 +16,8 @@ The following components are required on your Linux PC. Most mainstream distribu
 
 - [**Avahi**](https://avahi.org/) – Zeroconf DNS service discovery
 - [**PulseAudio or PipeWire**](https://wiki.debian.org/PulseAudio) – Virtual audio device management
+- [**OpenSSL**](https://www.openssl.org/) – Cryptographic key exchange for secure pairing
+- [**libnotify**](https://gitlab.gnome.org/GNOME/libnotify) – Desktop notifications for pairing requests
 - [**Systemd**](https://systemd.io/) – Automatic service startup (optional; manual configuration needed for other init systems)
 
 ## Installation
@@ -71,20 +73,9 @@ Once installed, connecting your phone to your PC is straightforward:
 
 - Connect your phone to your PC via USB cable
 - Enable USB Tethering in your Android settings
+- Turn off your Wi-Fi
 - Open the Mica app and toggle the connection switch
 - The app automatically routes audio through the USB connection
-
-<img src="Documentation/1.png" width="200" alt="Application screenshot">
-
-## Performance
-
-The listener is architected for minimal resource consumption (Measured on a system with a Ryzen 7 5700X and 16GB RAM):
-
-| Resource | Usage |
-|----------|-------|
-| **CPU** | ~0.3% of a single core (active) |
-| **RAM** | ~5MB active, ~1MB idle |
-| **Storage** | ~100KB |
 
 ## Troubleshooting
 
@@ -109,12 +100,14 @@ build-essential
 pkg-config
 libavahi-client-dev
 libopenal-dev
+libssl-dev
+libnotify-dev
 ```
 
 They can be installed with:
 
 ```bash
-sudo apt install cmake ninja-build build-essential pkg-config libavahi-client-dev libopenal-dev
+sudo apt install cmake ninja-build build-essential pkg-config libavahi-client-dev libopenal-dev libssl-dev libnotify-dev
 ```
 
 On other systems additional dependencies may be needed.
